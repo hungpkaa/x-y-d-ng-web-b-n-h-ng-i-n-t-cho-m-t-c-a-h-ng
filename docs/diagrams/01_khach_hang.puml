@@ -1,0 +1,50 @@
+@startuml
+left to right direction
+actor "Khách hàng ACT-01\n(vãng lai hoặc đăng nhập)" as K
+rectangle "Electro Store — khách hàng" {
+  usecase "UC-01 Đăng ký" as U01
+  usecase "UC-02 Đăng nhập" as U02
+  usecase "UC-03 Đăng xuất" as U03
+  usecase "UC-04 Hồ sơ/mật khẩu" as U04
+  usecase "UC-06 Duyệt/tìm/lọc/sắp xếp" as U06
+  usecase "UC-07 Chi tiết sản phẩm" as U07
+  usecase "UC-14 So sánh" as U14
+  usecase "UC-15 Gợi ý" as U15
+  usecase "UC-16 Giỏ hàng" as U16
+  usecase "UC-17 Báo giá checkout" as U17
+  usecase "UC-18 Xác nhận đặt hàng" as U18
+  usecase "UC-19 Đơn cá nhân/lịch sử" as U19
+  usecase "UC-20 Hủy đơn PENDING" as U20
+  usecase "UC-22 Thanh toán/thử lại" as U22
+  usecase "UC-27 Gửi/sửa đánh giá" as U27
+  usecase "UC-30 Gửi/xem hỗ trợ" as U30
+  usecase "Kiểm tra giỏ và tính báo giá" as check
+  usecase "Giữ tồn và lưu đơn" as reserve
+  usecase "Áp mã giảm giá" as coupon
+}
+K -- U01
+K -- U02
+K -- U03
+K -- U04
+K -- U06
+K -- U07
+K -- U14
+K -- U15
+K -- U16
+K -- U17
+K -- U18
+K -- U19
+K -- U20
+K -- U22
+K -- U27
+K -- U30
+U17 ..> check : <<include>>
+U18 ..> check : <<include>>
+U18 ..> reserve : <<include>>
+coupon ..> U17 : <<extend>>\n[nhập mã]
+note bottom of K
+Vãng lai: UC-01,02,06,07,14,15,16.
+UC-03,04,17..20,22,27,30 cần CUSTOMER ACTIVE.
+UC-27: chủ đơn đã nhận hàng.
+end note
+@enduml

@@ -1,0 +1,44 @@
+@startuml
+left to right direction
+actor "Quản trị viên ACT-03" as Q
+rectangle "Electro Store — quản trị" {
+  usecase "UC-02,03,04\nĐăng nhập/xuất/hồ sơ" as I
+  usecase "UC-06,07,14,15\nCatalog công khai" as C
+  usecase "UC-05 Quản lý khách/nhân viên" as U05
+  usecase "UC-08 Tạo bản nháp/SKU" as U08
+  usecase "UC-09 Sửa thông tin/ảnh/thông số" as U09
+  usecase "UC-10 Thiết lập/sửa giá" as U10
+  usecase "UC-11 Điều chỉnh tồn" as U11
+  usecase "UC-12 Công bố/ẩn" as U12
+  usecase "UC-13 Danh mục/thương hiệu/thuộc tính" as U13
+  usecase "UC-21 Xử lý đơn" as U21
+  usecase "UC-24 Xác nhận thu COD" as U24
+  usecase "UC-25 Tạo vận đơn" as U25
+  usecase "UC-26 Cập nhật giao thủ công" as U26
+  usecase "UC-28 Duyệt đánh giá" as U28
+  usecase "UC-29 Quản lý khuyến mãi" as U29
+  usecase "UC-31 Xử lý hỗ trợ" as U31
+  usecase "UC-32 Báo cáo/xuất" as U32
+  usecase "UC-33 Nhật ký" as U33
+  usecase "UC-34 Hoàn tiền thủ công" as U34
+}
+Q -- I
+Q -- C
+Q -- U05
+Q -- U08
+Q -- U09
+Q -- U10
+Q -- U11
+Q -- U12
+Q -- U13
+Q -- U21
+Q -- U24
+Q -- U25
+Q -- U26
+Q -- U28
+Q -- U29
+Q -- U31
+Q -- U32
+Q -- U33
+Q -- U34
+@enduml

@@ -1,0 +1,33 @@
+<h1>Danh mục và thương hiệu</h1>
+<a href="/admin">← Quản lý sản phẩm</a>
+<p>Tạo danh mục và thương hiệu để sử dụng khi thêm sản phẩm. Ngừng sử dụng ngăn gán mới; sản phẩm đang bán vẫn giữ nguyên.</p>
+<% [['Danh mục','categories',catalogCategories],['Thương hiệu','brands',catalogBrands]].forEach(([title,kind,items])=>{ %>
+<section class="panel">
+  <h2><%= title %></h2>
+  <form method="post" action="/admin/catalog/<%= kind %>">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="formgrid">
+      <label>Tên<input name="name" maxlength="120" required></label>
+      <label>Đường dẫn<input name="slug" maxlength="150" pattern="[a-z0-9]+(-[a-z0-9]+)*" placeholder="vi-du-dien-thoai" required></label>
+      <input type="hidden" name="active" value="1">
+    </div>
+    <button>Thêm <%= title.toLowerCase() %></button>
+  </form>
+  <% if(!items.length) { %><p>Chưa có dữ liệu.</p><% } %>
+  <% items.forEach(item=>{ %>
+  <details class="panel">
+    <summary><%= item.name %> · <%= item.active ? 'Đang sử dụng' : 'Ngừng sử dụng' %></summary>
+    <form method="post" action="/admin/catalog/<%= kind %>">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <input type="hidden" name="id" value="<%= item.id %>">
+      <div class="formgrid">
+        <label>Tên<input name="name" value="<%= item.name %>" maxlength="120" required></label>
+        <label>Đường dẫn<input name="slug" value="<%= item.slug %>" maxlength="150" pattern="[a-z0-9]+(-[a-z0-9]+)*" required></label>
+        <label>Trạng thái<select name="active"><option value="1" <%= item.active ? 'selected' : '' %>>Đang sử dụng</option><option value="0" <%= item.active ? '' : 'selected' %>>Ngừng sử dụng</option></select></label>
+      </div>
+      <button>Lưu thay đổi</button>
+    </form>
+  </details>
+  <% }) %>
+</section>
+<% }) %>

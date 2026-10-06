@@ -1,0 +1,8 @@
+<% [['Danh mục','category',catalogCategories],['Thương hiệu','brand',catalogBrands]].forEach(([label,key,items])=>{ %>
+<label><%= label %><select name="<%= key %>" required>
+  <option value="">Chọn <%= label.toLowerCase() %></option>
+  <% items.filter(item=>item.active || product?.[key+'_id']===item.id).forEach(item=>{ %>
+  <option value="<%= item.name %>" <%= product?.[key+'_id']===item.id ? 'selected' : '' %>><%= item.name %><%= item.active ? '' : ' (ngừng sử dụng)' %></option>
+  <% }) %>
+</select></label>
+<% }) %>

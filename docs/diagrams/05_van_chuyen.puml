@@ -1,0 +1,25 @@
+@startuml
+left to right direction
+actor "Đơn vị vận chuyển ACT-05" as G
+actor "Nhân viên ACT-02" as N
+actor "Quản trị viên ACT-03" as Q
+rectangle "Electro Store — vận chuyển" {
+  usecase "UC-25 Tạo yêu cầu giao/nhận mã vận đơn" as U25
+  usecase "UC-26 Nhận kết quả giao hàng" as U26
+  usecase "Xác thực và chống sự kiện trùng" as verify
+  usecase "Kiểm tra bước chuyển trạng thái" as transition
+}
+G -- U25
+G -- U26
+N -- U25
+Q -- U25
+N -- U26
+Q -- U26
+U26 ..> verify : <<include>>
+U26 ..> transition : <<include>>
+note bottom of U26
+G: callback đã xác thực.
+N/Q: chế độ thủ công có CSRF và audit.
+Đã giao không tự xác nhận thu tiền COD.
+end note
+@enduml

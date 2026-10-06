@@ -1,0 +1,9 @@
+<h1>Quản lý sản phẩm</h1>
+<% if(user.role==='ADMIN') { %><a class="button secondary" href="/admin/promotions">Khuyến mãi</a><a class="button secondary" href="/admin/reviews">Duyệt đánh giá</a><% } %>
+<% if(user.role==='ADMIN') { %><a class="button secondary" href="/admin/catalog">Danh mục và thương hiệu</a><% } %>
+<% if(user.role==='ADMIN') { %><a class="button secondary" href="/admin/attributes">Thông số kỹ thuật</a><% } %>
+<a class="button" href="/admin/orders">Xử lý đơn hàng</a>
+<% if(user.role==='ADMIN') { %><a class="button secondary" href="/admin/accounts">Tài khoản và nhân viên</a><a class="button secondary" href="/admin/shipping">Phí giao hàng</a><% } %>
+<section class="panel"><h2>Tạo bản nháp</h2><p>Thêm thông tin sản phẩm, sau đó tạo SKU theo màu/cấu hình. Quản trị viên đặt giá và công bố.</p>
+<form method="post" action="/admin/products"><input type="hidden" name="_csrf" value="<%= csrf %>"><div class="formgrid"><label>Tên<input name="name" maxlength="120" required></label><%- include('catalog-fields',{product:null}) %><label>Mô tả<textarea name="description" maxlength="2000" required></textarea></label></div><button>Tạo bản nháp</button></form></section>
+<h2>Danh sách sản phẩm</h2><%- include('product-filters',{management:true}) %><% products.forEach(p=>{ %><a class="row panel" href="/admin/products/<%= p.id %>"><strong><%= p.name %></strong><span><%= p.category %> · <%= p.brand %></span><span><%= {DRAFT:'Bản nháp',ACTIVE:'Đang bán',HIDDEN:'Đã ẩn'}[p.status] %></span><span>Thông tin và SKU →</span></a><% }) %><% if(!products.length) { %><p>Không có sản phẩm phù hợp.</p><% } %><%- include('pagination') %>

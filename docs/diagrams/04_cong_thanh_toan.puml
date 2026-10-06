@@ -1,0 +1,20 @@
+@startuml
+left to right direction
+actor "Khách hàng ACT-01" as K
+actor "Cổng thanh toán ACT-04" as T
+rectangle "Electro Store — tích hợp thanh toán" {
+  usecase "UC-22 Tạo yêu cầu/thử lại thanh toán" as U22
+  usecase "UC-23 Tiếp nhận kết quả thanh toán" as U23
+  usecase "Xác thực chữ ký, tham chiếu, tiền" as validate
+  usecase "Chống sự kiện trùng và cập nhật nguyên tử" as dedupe
+}
+K -- U22
+T -- U22
+T -- U23
+U23 ..> validate : <<include>>
+U23 ..> dedupe : <<include>>
+note bottom of U23
+Trang khách quay lại chỉ hiển thị trạng thái.
+Không dùng redirect của trình duyệt để xác nhận PAID.
+end note
+@enduml

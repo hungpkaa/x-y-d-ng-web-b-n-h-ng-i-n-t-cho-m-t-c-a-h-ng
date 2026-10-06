@@ -1,0 +1,1 @@
+<nav class="pagination" aria-label="Phân trang"><span><%= paging.total %> <%= recordLabel %> · Trang <%= paging.page %>/<%= paging.pages %></span><% if(paging.previous) { %><a class="button secondary" rel="prev" href="<%= paging.previous %>">← Trang trước</a><% } %><% if(paging.next) { %><a class="button secondary" rel="next" href="<%= paging.next %>">Trang sau →</a><% } %></nav>

@@ -1,0 +1,48 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+actor "Khách hàng\nACT-01" as K
+actor "Nhân viên\nACT-02" as N
+actor "Quản trị viên\nACT-03" as Q
+actor "Cổng thanh toán\nACT-04" as T
+actor "Đơn vị vận chuyển\nACT-05" as G
+rectangle "Electro Store" {
+  usecase "Tài khoản cá nhân\nUC-01..04" as identity
+  usecase "Catalog, so sánh, gợi ý\nUC-06,07,14,15" as catalog
+  usecase "Giỏ, checkout, đơn cá nhân\nUC-16..20" as purchase
+  usecase "Thanh toán trực tuyến\nUC-22,23" as payment
+  usecase "Đánh giá, hỗ trợ cá nhân\nUC-27,30" as customer
+  usecase "Sản phẩm/SKU và kho\nUC-08..13" as product
+  usecase "Xử lý đơn và hỗ trợ\nUC-21,31" as operation
+  usecase "Vận chuyển\nUC-25,26" as shipping
+  usecase "Tài khoản, khuyến mãi, duyệt đánh giá\nUC-05,28,29" as admin
+  usecase "Thu COD, hoàn tiền, báo cáo, nhật ký\nUC-24,32..34" as finance
+}
+K -- identity
+K -- catalog
+K -- purchase
+K -- payment
+K -- customer
+N -- identity
+N -- catalog
+N -- product
+N -- operation
+N -- shipping
+Q -- identity
+Q -- catalog
+Q -- product
+Q -- operation
+Q -- shipping
+Q -- admin
+Q -- finance
+T -- payment
+G -- shipping
+note bottom of product
+STAFF: bản nháp, thông tin, tồn kho.
+Chỉ ADMIN: giá, công bố/ẩn, danh mục/thương hiệu.
+end note
+note bottom of identity
+Đăng ký chỉ dành cho khách vãng lai.
+Nhân viên/quản trị không tự đăng ký quyền.
+end note
+@enduml

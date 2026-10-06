@@ -1,0 +1,22 @@
+{
+  "name": "electro-store",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Website bán đồ điện tử — Node.js, Express, SQLite",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test",
+    "test:smoke": "node scripts/smoke.js"
+  },
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "helmet": "^8.1.0",
+    "sharp": "^0.35.5"
+  }
+}

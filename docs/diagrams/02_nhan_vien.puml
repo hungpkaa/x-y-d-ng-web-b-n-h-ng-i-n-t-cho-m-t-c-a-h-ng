@@ -1,0 +1,38 @@
+@startuml
+left to right direction
+actor "Nhân viên ACT-02" as N
+actor "Đơn vị vận chuyển ACT-05" as G
+rectangle "Electro Store — nhân viên" {
+  usecase "UC-02 Đăng nhập" as U02
+  usecase "UC-03 Đăng xuất" as U03
+  usecase "UC-04 Hồ sơ/mật khẩu" as U04
+  usecase "UC-06,07,14,15\nXem catalog công khai" as C
+  usecase "UC-08 Tạo bản nháp/SKU" as U08
+  usecase "UC-09 Thông tin/ảnh/thông số" as U09
+  usecase "UC-11 Điều chỉnh tồn kho" as U11
+  usecase "UC-21 Xử lý đơn" as U21
+  usecase "UC-25 Tạo vận đơn" as U25
+  usecase "UC-26 Cập nhật giao hàng thủ công" as U26
+  usecase "UC-31 Xử lý hỗ trợ" as U31
+}
+N -- U02
+N -- U03
+N -- U04
+N -- C
+N -- U08
+N -- U09
+N -- U11
+N -- U21
+N -- U25
+N -- U26
+N -- U31
+G -- U25
+note bottom of U08
+Không nhập/sửa giá hoặc công bố sản phẩm.
+Bản nháp chờ ADMIN thiết lập giá.
+end note
+note bottom of U26
+Chế độ thủ công có mã vận đơn và bằng chứng.
+Không xác nhận đã thu COD.
+end note
+@enduml

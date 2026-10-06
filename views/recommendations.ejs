@@ -1,0 +1,9 @@
+<h1>Gợi ý sản phẩm</h1><p>Chọn danh mục thiết bị và khoảng ngân sách để tìm cấu hình còn hàng. Kết quả hiển thị tối đa 6 sản phẩm, mỗi sản phẩm một cấu hình phù hợp.</p>
+<form class="filters" method="get" action="/recommendations">
+<% if(recommendation.source) { %><input type="hidden" name="source" value="<%= recommendation.source.id %>"><% if(recommendation.anchor) { %><input type="hidden" name="sku" value="<%= recommendation.anchor.id %>"><% } %><% } %>
+<label>Danh mục<select name="category_id"><option value="">Tất cả</option><% options.categories.forEach(c=>{ %><option value="<%= c.id %>" <%= recommendation.filters.category_id===String(c.id)?'selected':'' %>><%= c.name %></option><% }) %></select></label>
+<label>Thương hiệu<select name="brand_id"><option value="">Tất cả</option><% options.brands.forEach(b=>{ %><option value="<%= b.id %>" <%= recommendation.filters.brand_id===String(b.id)?'selected':'' %>><%= b.name %></option><% }) %></select></label>
+<label>Giá từ (VND)<input type="number" name="min" min="0" max="1000000000" step="1" value="<%= recommendation.filters.min %>"></label><label>Giá đến (VND)<input type="number" name="max" min="0" max="1000000000" step="1" value="<%= recommendation.filters.max %>"></label><button>Tìm gợi ý</button><a href="/recommendations">Xóa bộ lọc</a>
+</form>
+<%- include('recommendation-cards') %>
+<p>Gợi ý dựa trên danh mục, thương hiệu, mức giá và số lượng đã giao. Khi chưa có lịch sử giao hàng, hệ thống giới thiệu sản phẩm đang bán và còn hàng.</p>
