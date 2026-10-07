@@ -1,8 +1,10 @@
 # Truy vết yêu cầu và nghiệm thu
 
+Cập nhật 07/10/2026: 82 bài local và 7 bài PostgreSQL đạt, hai smoke đạt; UC-25/26 đã có chế độ thủ công, AT-23/24 có bài kiểm tra nhận hàng về. Chi tiết [đối chiếu 34 UC](12_ECARTS_ET_IMPLEMENTATION.md). Chưa nghiệm thu mọi ca AT hoặc API hãng/SMTP/VNPay thật.
+
 Phiên bản 1.0 — 05/10/2026. Checklist mục tiêu, không phải kết quả test đã chạy. Đặc tả tại [05](05_DAC_TA_USE_CASE.md), sơ đồ tại [04](04_DANH_MUC_VA_SO_DO_USE_CASE.md) và [06](06_QUY_TAC_VA_SO_DO_LUONG.md), dữ liệu tại [07](07_ERD_VA_TU_DIEN_DU_LIEU.md).
 
-Kết quả triển khai mới nhất: bước 6 ngày 07/10/2026 có 42 kiểm thử và smoke test đạt cho catalog/SKU/phiên/tài khoản/đơn/COD local và so sánh/gợi ý UC-14/15. Phạm vi, giới hạn và bằng chứng kiểm tra nằm tại [tiến độ triển khai](09_TIEN_DO_TRIEN_KHAI.md); các ca AT dưới đây vẫn là checklist của hệ thống mục tiêu, không được coi tất cả đã đạt.
+Kết quả triển khai mới nhất ngày 07/10/2026: 77 kiểm thử và smoke test đạt cho luồng local đến migration v8, gồm catalog/SKU/phiên, tài khoản/đơn, khuyến mãi/đánh giá, báo cáo/audit, địa chỉ/hỗ trợ/reset và ledger VNPay/hoàn tiền. SMTP và IPN dùng dữ liệu giả trong test; chưa nghiệm thu SMTP/merchant VNPay thật. Phạm vi, giới hạn và bằng chứng tại [tiến độ](09_TIEN_DO_TRIEN_KHAI.md) và [cấu hình tích hợp](10_CAU_HINH_EMAIL_VNPAY.md); các ca AT dưới đây vẫn là checklist mục tiêu, không được coi tất cả đã đạt.
 
 ## 1. Ma trận truy vết
 

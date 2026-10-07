@@ -1,4 +1,5 @@
 <h1>Hồ sơ của tôi</h1>
+<% if(user.role==='CUSTOMER') { %><a class="button secondary" href="/addresses">Sổ địa chỉ</a><p>Địa chỉ mặc định trong sổ được ưu tiên khi đặt hàng. Điện thoại/địa chỉ hồ sơ bên dưới dùng khi sổ còn trống.</p><% } %>
 <section class="panel"><p>Email: <strong><%= user.email %></strong></p>
 <form method="post" action="/profile"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="version" value="<%= user.version %>">
 <div class="formgrid"><label>Họ tên<input name="name" value="<%= user.name %>" minlength="2" maxlength="80" autocomplete="name" required></label><label>Điện thoại<input name="phone" value="<%= user.phone %>" type="tel" pattern="0[0-9]{9}" autocomplete="tel"></label><label>Địa chỉ nhận hàng mặc định<textarea name="address" minlength="10" maxlength="300" autocomplete="street-address"><%= user.address %></textarea></label></div><button>Lưu hồ sơ</button></form></section>

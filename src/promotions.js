@@ -75,7 +75,7 @@ function promotionQuote(db,userId,snapshot,rawCode='',now=Date.now()) {
 function listPromotions(db,query={}) {
   const q=typeof query.q==='string'?query.q.trim():'',active=query.active??'';
   if(q.length>100||!['','0','1'].includes(active)) return {status:400,message:'Bộ lọc không hợp lệ.'};
-  const where="WHERE instr(code,upper(?))>0 AND (?='' OR active=?)",args=[q,active,active];
+  const where="WHERE instr(code,upper(?))>0 AND (?='' OR CAST(active AS TEXT)=?)",args=[q,active,active];
   const total=db.prepare(`SELECT COUNT(*) n FROM promotions ${where}`).get(...args).n;
   const paging=pagination(total,query.page||1,20,'/admin/promotions',{q,active});
   const rows=db.prepare(`SELECT p.*,(SELECT COUNT(*) FROM promotion_redemptions WHERE promotion_id=p.id AND status IN ('HELD','USED')) AS occupied FROM promotions p ${where} ORDER BY id DESC LIMIT ? OFFSET ?`).all(...args,paging.size,paging.offset);

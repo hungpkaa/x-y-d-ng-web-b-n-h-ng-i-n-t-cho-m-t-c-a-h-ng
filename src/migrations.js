@@ -37,8 +37,8 @@ CREATE INDEX sessions_expiry_idx ON sessions(expires_at);
 CREATE TABLE app_settings(key TEXT PRIMARY KEY,value TEXT NOT NULL);
 CREATE TABLE checkout_requests(id INTEGER PRIMARY KEY,user_id INTEGER NOT NULL REFERENCES users(id),request_key TEXT NOT NULL,quote_json TEXT NOT NULL,expires_at INTEGER NOT NULL,payload_hash TEXT,order_id INTEGER UNIQUE REFERENCES orders(id),UNIQUE(user_id,request_key),CHECK((order_id IS NULL AND payload_hash IS NULL) OR (order_id IS NOT NULL AND payload_hash IS NOT NULL)));
 CREATE INDEX checkout_expiry_idx ON checkout_requests(expires_at) WHERE order_id IS NULL;
-`)},{version:5,name:'accounts_order_management',up:require('./account-order-migration').migrateAccountsOrders},{version:6,name:'promotions_verified_reviews',up:require('./promotion-review-migration').migratePromotionsReviews}];
-function migrate(db, file = ':memory:', targetVersion = 6) {
+`)},{version:5,name:'accounts_order_management',up:require('./account-order-migration').migrateAccountsOrders},{version:6,name:'promotions_verified_reviews',up:require('./promotion-review-migration').migratePromotionsReviews},{version:7,name:'customer_services',up:require('./customer-services-migration').migrateCustomerServices},{version:8,name:'payments_refunds',up:require('./payments-migration').migratePayments},{version:9,name:'manual_shipments',up:require('./shipments-migration').migrateShipments},{version:10,name:'favorites_notifications',up:require('./engagement-migration').migrateEngagement}];
+function migrate(db, file = ':memory:', targetVersion = 10) {
   const hasVersions = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='schema_migrations'").get();
   const applied = hasVersions ? new Set(db.prepare('SELECT version FROM schema_migrations').all().map(row=>row.version)) : new Set();
   const pending = migrations.filter(item=>item.version<=targetVersion && !applied.has(item.version));

@@ -52,4 +52,18 @@ function changeImage(db,actor,productId,imageId,input,remove=false) {
     return {status:200,message:remove?'Đã xóa ảnh.':'Đã cập nhật ảnh.'};
   });
 }
-module.exports={addImage,changeImage};
+function reorderImages(db,actor,productId,input) {
+  if(!allowed(actor)) return {status:403,message:'Bạn không có quyền sắp xếp ảnh.'};
+  return transaction(db,()=>{
+    const product=db.prepare('SELECT version FROM products WHERE id=?').get(productId);
+    if(!product) return {status:404,message:'Không tìm thấy sản phẩm.'};
+    if(Number(input.version)!==product.version) return {status:409,message:'Ảnh đã thay đổi. Hãy tải lại trang.'};
+    const before=db.prepare('SELECT id FROM product_images WHERE product_id=? ORDER BY sort_order,id').all(productId).map(row=>row.id),ids=input.ids;
+    if(!Array.isArray(ids)||ids.length!==before.length||ids.length<1||ids.length>10||new Set(ids).size!==ids.length||ids.some(id=>!Number.isSafeInteger(id)||!before.includes(id))) return {status:400,message:'Danh sách ảnh không hợp lệ hoặc chứa ảnh sản phẩm khác.'};
+    ids.forEach((id,index)=>db.prepare('UPDATE product_images SET sort_order=? WHERE id=? AND product_id=?').run(index,id,productId));
+    db.prepare('UPDATE products SET version=version+1 WHERE id=?').run(productId);
+    log(db,actor,'REORDER_IMAGES',productId,{productId,before,after:ids});
+    return {status:200,message:'Đã lưu thứ tự ảnh. Ảnh đầu tiên là ảnh đại diện.'};
+  });
+}
+module.exports={addImage,changeImage,reorderImages};

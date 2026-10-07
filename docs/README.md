@@ -1,6 +1,14 @@
 # Bộ tài liệu phân tích và thiết kế Electro Store
 
+**Mới nhất:** [Dashboard, ảnh, yêu thích/đã xem và thông báo trong website](15_DASHBOARD_ANH_YEU_THICH_THONG_BAO.md). Đã triển khai hướng 3–6: SQLite v10, PostgreSQL v3; 87 ca local và 8 ca PostgreSQL đạt, hai luồng smoke đạt. Các số liệu bên dưới là mốc trước đó.
+
+[Kết quả kiểm tra lại và ý tưởng phát triển ngày 07/10/2026](14_KIEM_TRA_VA_DE_XUAT_PHAT_TRIEN.md): 89 ca đạt khi chạy hai bộ, smoke SQLite/PostgreSQL đạt, dữ liệu hiện có không vi phạm các kiểm tra tồn/đơn/hoàn; ghi rõ phạm vi chưa kiểm tra trực tiếp bằng browser hoặc nhà cung cấp thật.
+
+**Cập nhật 07/10/2026:** [đối chiếu 34 UC và phần còn thiếu](12_ECARTS_ET_IMPLEMENTATION.md), [hướng dẫn vận chuyển thủ công](13_SU_DUNG_VAN_CHUYEN.md), [PostgreSQL](11_POSTGRESQL.md). Bản mới bổ sung shipment/nhận hàng về: SQLite v9, PostgreSQL v2; 82 bài local và 7 bài PostgreSQL đạt. Các kết quả v8 dưới đây là mốc trước đó.
+
 Phiên bản thiết kế 1.0 — ngày 05/10/2026. Phạm vi: website bán đồ điện tử cho một cửa hàng. Bộ tài liệu mô tả **hệ thống mục tiêu**, không xác nhận các chức năng đã được lập trình. Kết quả triển khai theo từng bước, schema thực tế và kiểm thử được cập nhật riêng tại [tiến độ triển khai](09_TIEN_DO_TRIEN_KHAI.md).
+
+Cấu hình các chức năng mới: [SMTP, VNPay sandbox và hoàn tiền](10_CAU_HINH_EMAIL_VNPAY.md). Mã nguồn hiện đến migration v8; kết quả mới nhất 77 kiểm thử đạt, chưa nghiệm thu SMTP/merchant VNPay thật.
 
 ## Thứ tự đọc
 

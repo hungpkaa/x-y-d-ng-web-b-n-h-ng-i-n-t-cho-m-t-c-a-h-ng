@@ -1,0 +1,16 @@
+<h1>Nhật ký quản trị</h1><a href="/admin">← Quản lý</a>
+<form method="get" action="/admin/audit" class="filters">
+<label>Từ ngày<input type="date" name="from" value="<%= filters.from %>" required></label>
+<label>Đến hết ngày<input type="date" name="to" value="<%= filters.to %>" required></label>
+<label>Người thao tác<select name="actor"><option value="">Tất cả</option><option value="system" <%= filters.actor==='system'?'selected':'' %>>Hệ thống / không có tài khoản</option><% actors.forEach(actor=>{ %><option value="<%= actor.id %>" <%= filters.actor===String(actor.id)?'selected':'' %>><%= actor.name %> (#<%= actor.id %> · <%= actor.role %>)</option><% }) %></select></label>
+<label>Thao tác<select name="action"><option value="">Tất cả</option><% actions.forEach(row=>{ %><option value="<%= row.action %>" <%= filters.action===row.action?'selected':'' %>><%= row.action %></option><% }) %></select></label>
+<label>Loại đối tượng<select name="entity"><option value="">Tất cả</option><% entities.forEach(row=>{ %><option value="<%= row.entity_type %>" <%= filters.entity===row.entity_type?'selected':'' %>><%= row.entity_type %></option><% }) %></select></label>
+<label>Mã đối tượng<input name="id" type="number" min="0" step="1" value="<%= filters.id %>"></label><button>Lọc nhật ký</button>
+</form>
+<p>Ngày theo giờ Việt Nam (UTC+7), tối đa 366 ngày. Nhật ký chỉ đọc; trường nhạy cảm được che.</p>
+<% if(!rows.length) { %><p>Không có thao tác phù hợp.</p><% } %>
+<% rows.forEach(row=>{ %><section class="panel"><h2><%= row.action %> · <%= row.entity_type %> #<%= row.entity_id %></h2><p><%= localDateTime(row.created_at) %> (UTC+7) · <%= row.actor_name||(row.actor_id===null?'Hệ thống / không có tài khoản':'Tài khoản #'+row.actor_id) %><% if(row.actor_role) { %> · <%= row.actor_role %><% } %> · Nhật ký #<%= row.id %></p>
+<% if(row.entity_type==='ORDER') { %><a href="/orders/<%= row.entity_id %>">Xem đơn hàng</a><% } %>
+<details><summary>Dữ liệu trước và sau</summary><div class="formgrid"><div><h3>Trước</h3><pre class="audit-json"><%= row.before_json??'Không có' %></pre></div><div><h3>Sau</h3><pre class="audit-json"><%= row.after_json??'Không có' %></pre></div></div></details>
+</section><% }) %>
+<%- include('record-pagination',{recordLabel:'thao tác'}) %>

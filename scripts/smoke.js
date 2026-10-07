@@ -2,11 +2,20 @@ const { spawn } = require('node:child_process');
 const { randomBytes } = require('node:crypto');
 const assert = require('node:assert/strict');
 const path = require('node:path');
+const postgres=process.argv.includes('--postgres');
+let postgresRoot,postgresSchema;
+if(postgres) {
+  if(!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required for PostgreSQL smoke');
+  const {PostgresDatabase}=require('../src/postgres');
+  postgresRoot=new PostgresDatabase(process.env.DATABASE_URL);
+  postgresSchema='test_smoke_'+randomBytes(8).toString('hex');
+  postgresRoot.exec(`CREATE SCHEMA "${postgresSchema}"`);
+}
 const port = '3107';
 const adminPassword = randomBytes(16).toString('hex');
 const staffPassword = randomBytes(16).toString('hex');
 const bootstrap=`const data=require(${JSON.stringify(path.join(__dirname,'..','src','db.js'))});const db=data.defaultDatabase();db.prepare('INSERT INTO users(name,email,password,role) VALUES(?,?,?,?)').run('Staff smoke','smoke-staff@example.com',data.hashPassword(process.env.SMOKE_STAFF_PASSWORD),'STAFF');data.defaultDatabase=()=>db;require(${JSON.stringify(path.join(__dirname,'..','src','server.js'))});`;
-const child = spawn(process.execPath,['-e',bootstrap],{env:{...process.env,PORT:port,DB_PATH:':memory:',ADMIN_EMAIL:'smoke-admin@example.com',ADMIN_PASSWORD:adminPassword,SMOKE_STAFF_PASSWORD:staffPassword},stdio:['ignore','pipe','pipe'],windowsHide:true});
+const child = spawn(process.execPath,['-e',bootstrap],{env:{...process.env,PORT:port,DB_PATH:postgres?'':':memory:',DATABASE_SCHEMA:postgresSchema||'public',ADMIN_EMAIL:'smoke-admin@example.com',ADMIN_PASSWORD:adminPassword,SMOKE_STAFF_PASSWORD:staffPassword},stdio:['ignore','pipe','pipe'],windowsHide:true});
 let errors='';
 child.stderr.on('data',chunk=>errors+=chunk);
 async function request(url,options={}) {
@@ -33,12 +42,14 @@ async function refresh(identity) {
       child.stdout.on('data',chunk=>{if(String(chunk).includes('Electro Store:')){clearTimeout(timer);resolve();}});
     });
     const customer=await session();
+    await request('/products/2',{headers:{cookie:customer.cookie}});
     const email=`smoke-${randomBytes(6).toString('hex')}@example.com`,password=randomBytes(16).toString('hex');
     assert.equal((await post('/register',customer,{name:'Khách kiểm thử',email,password})).status,302);
     const login=await post('/login',customer,{email,password});
     assert.equal(login.headers.get('location'),'/');
     customer.cookie=login.headers.get('set-cookie').split(';')[0];
     await refresh(customer);
+    assert.match(await (await request('/recent',{headers:{cookie:customer.cookie}})).text(),/Galaxy S25/);
     assert.equal((await request('/admin',{headers:{cookie:customer.cookie}})).status,403);
     assert.equal((await request('/admin/catalog',{headers:{cookie:customer.cookie}})).status,403);
     assert.equal((await post('/admin/catalog/categories',customer,{name:'Không được tạo',slug:'no-access',active:'1'})).status,403);
@@ -84,8 +95,22 @@ async function refresh(identity) {
     await refresh(staff);
     assert.equal((await request('/checkout',{headers:{cookie:staff.cookie}})).status,403);
     assert.equal((await request('/admin/catalog',{headers:{cookie:staff.cookie}})).status,403);
-    const draft=await post('/admin/products',staff,{name:'Sản phẩm kiểm thử catalog',category:'Thiết bị kiểm thử',brand:'Smoke Brand',description:'Mô tả kiểm thử'});
-    const draftUrl=draft.headers.get('location');
+    const createPage=await (await request('/admin',{headers:{cookie:staff.cookie}})).text();
+    assert.match(createPage,/name="product_image"/);
+    assert.match(createPage,/Điều hướng quản trị/);
+    const dashboard=await request('/admin/dashboard',{headers:{cookie:staff.cookie}});
+    assert.equal(dashboard.status,200);assert.match(await dashboard.text(),/Tổng quan cửa hàng/);
+    assert.equal((await request('/admin/dashboard',{headers:{cookie:customer.cookie}})).status,403);
+    assert.equal((await request('/favorites',{headers:{cookie:staff.cookie}})).status,403);
+    await post('/favorites/1/add',customer,{});
+    assert.match(await (await request('/favorites',{headers:{cookie:customer.cookie}})).text(),/iPhone 16/);
+    await request('/products/1',{headers:{cookie:customer.cookie}});
+    assert.match(await (await request('/recent',{headers:{cookie:customer.cookie}})).text(),/iPhone 16/);
+    assert.equal((await request('/notifications',{headers:{cookie:customer.cookie}})).status,200);
+    const draft=await request('/admin/products',{method:'POST',headers:{cookie:staff.cookie,'content-type':'application/json',accept:'application/json'},body:JSON.stringify({_csrf:staff.csrf,name:'Sản phẩm kiểm thử catalog',category:'Thiết bị kiểm thử',brand:'Smoke Brand',description:'Mô tả kiểm thử'})});
+    assert.equal(draft.status,200);
+    const createdDraft=await draft.json();assert.equal(createdDraft.version,1);
+    const draftUrl=createdDraft.url;
     assert.match(draftUrl,/^\/admin\/products\/\d+$/);
     const draftId=draftUrl.split('/').pop();
     assert.equal((await request(`/products/${draftId}`)).status,404);
@@ -134,8 +159,15 @@ async function refresh(identity) {
     assert.match(skuOrderText,/SMOKE-BLACK-128/);
     assert.match(skuOrderText,/128GB/);
     const orderId=orderUrl.split('/').pop();
-    for(const [index,status] of ['CONFIRMED','PREPARING','SHIPPING','DELIVERED'].entries()) {
+    for(const [index,status] of ['CONFIRMED','PREPARING'].entries()) {
       assert.equal((await post(`/admin/orders/${orderId}/status`,admin,{status,version:String(index+1),reason:'Smoke order processing'})).status,302);
+    }
+    const proof={occurred_at:new Date(Date.now()+25200000).toISOString().slice(0,19),evidence_ref:'SMOKE-HANDOFF-1',reason:'Smoke carrier evidence'};
+    await post(`/admin/orders/${orderId}/shipment`,admin,{version:'3',provider:'MANUAL TEST',tracking_number:'SMOKE-TRACK-1',...proof});
+    const shipmentHtml=await (await request(orderUrl,{headers:{cookie:admin.cookie}})).text();
+    const shipmentId=shipmentHtml.match(/action="\/admin\/shipments\/(\d+)\/status"/)[1];
+    for(const [index,status] of ['IN_TRANSIT','DELIVERED'].entries()) {
+      await post(`/admin/shipments/${shipmentId}/status`,admin,{version:String(index+1),order_version:String(index+3),request_key:randomBytes(16).toString('hex'),status,...proof});
     }
     const receiptPage=await request(orderUrl,{headers:{cookie:admin.cookie}});
     const receiptHtml=await receiptPage.text();
@@ -144,5 +176,10 @@ async function refresh(identity) {
     const delivered=await request(orderUrl,{headers:{cookie:customer.cookie}});
     assert.match(await delivered.text(),/Đã thu tiền/);
     console.log('PASS: quyền STAFF/ADMIN, ảnh WebP và quyền xem ảnh nháp, thông số typed, phân trang/lọc, SKU/đơn COD và giao hàng.');
-  } finally { child.kill(); }
+  } finally {
+    if(child.exitCode===null) {
+      const stopped=new Promise(resolve=>child.once('exit',resolve));child.kill();await stopped;
+    }
+    if(postgresRoot) {try {postgresRoot.exec(`DROP SCHEMA "${postgresSchema}" CASCADE`);} finally {postgresRoot.close();}}
+  }
 })().catch(error=>{console.error(error);process.exitCode=1;});

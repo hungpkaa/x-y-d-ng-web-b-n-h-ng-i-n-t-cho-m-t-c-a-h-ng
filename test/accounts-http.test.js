@@ -25,6 +25,19 @@ test('HTTP hồ sơ, tạo nhân viên, quyền, hủy đơn, khóa/mở khóa v
       child.stdout.on('data',chunk=>{const match=String(chunk).match(/http:\/\/localhost:(\d+)/);if(match){base=`http://127.0.0.1:${match[1]}`;clearTimeout(timer);resolve();}});
     });
     const admin=(await login('admin@test.com')).identity,staff=(await login('2@test.com')).identity,customer=(await login('3@test.com')).identity,other=(await login('4@test.com')).identity;
+    for(const [url,title] of [['/admin/promotions','Quản lý khuyến mãi'],['/admin/promotions/new','Tạo mã giảm giá'],['/admin/reviews','Kiểm duyệt đánh giá'],['/admin/reports','Báo cáo cửa hàng'],['/admin/audit','Nhật ký quản trị']]) {
+      const response=await request(url,admin);
+      assert.equal(response.status,200);
+      assert.ok((await response.text()).includes(title));
+      assert.equal((await request(url,staff)).status,403);
+      assert.equal((await request(url,customer)).status,403);
+      assert.equal((await request(url)).status,403);
+    }
+    assert.equal((await request('/admin/reports.csv',staff)).status,403);
+    assert.equal((await request('/admin/reports.csv',customer)).status,403);
+    assert.equal((await request('/admin/reports.csv')).status,403);
+    assert.equal((await request('/admin/reports?from=2026-02-30&to=2026-03-01',admin)).status,400);
+    assert.equal((await request('/admin/audit?page=invalid',admin)).status,400);
     const anonymousResponse=await request('/register'),anonymousHtml=await anonymousResponse.text();
     const anonymous={cookie:anonymousResponse.headers.get('set-cookie').split(';')[0],csrf:anonymousHtml.match(/name="_csrf" value="([^"]+)"/)[1]};
     await post('/register',anonymous,{name:'Public user',email:'public@test.com',password,role:'ADMIN',status:'LOCKED'});
@@ -56,6 +69,55 @@ test('HTTP hồ sơ, tạo nhân viên, quyền, hủy đơn, khóa/mở khóa v
     assert.equal((await post(orderUrl+'/cancel',customer,{version:'1',reason:'Requested cancellation'})).status,302);
     assert.match(await (await request(orderUrl,customer)).text(),/Đã hủy/);
     const list=await request('/admin/orders?status=CANCELLED',staff);assert.equal(list.status,200);assert.match(await list.text(),/Requested cancellation|Đã hủy/);
+    const createdPromotion=await post('/admin/promotions',admin,{code:'HTTPDEAL',kind:'FIXED',value:'1000',cap:'',minimum:'0',scope:'ALL',starts_at:'2020-01-01T00:00',ends_at:'2099-01-01T00:00',total_limit:'10',user_limit:'2',active:'1'});
+    assert.match(createdPromotion.headers.get('location'),/^\/admin\/promotions\/\d+$/);
+    assert.match(await (await request(createdPromotion.headers.get('location'),admin)).text(),/Khuyến mãi HTTPDEAL/);
+    await post('/cart',customer,{id:'1',quantity:'1'});
+    const discountedCheckout=await (await request('/checkout?code=HTTPDEAL',customer)).text();
+    assert.match(discountedCheckout,/name="code" value="HTTPDEAL"/);
+    const discountedToken=discountedCheckout.match(/name="token" value="([^"]+)"/)[1];
+    const discountedOrder=await post('/checkout',customer,{token:discountedToken,code:'HTTPDEAL',recipient:'Customer name',phone:'0901234567',address:'Saved default address'});
+    const discountedUrl=discountedOrder.headers.get('location');assert.match(discountedUrl,/^\/orders\/\d+$/);
+    assert.match(await (await request(discountedUrl,customer)).text(),/HTTPDEAL/);
+    const statusUrl='/admin/orders/'+discountedUrl.split('/').pop()+'/status';
+    for(const [index,status] of ['CONFIRMED','PREPARING'].entries()) {
+      await post(statusUrl,staff,{version:String(index+1),status,reason:'HTTP delivery check'});
+    }
+    const shippingProof={occurred_at:new Date(Date.now()+25200000).toISOString().slice(0,19),evidence_ref:'HTTP-CARRIER-EVIDENCE',reason:'HTTP carrier handling'};
+    await post(statusUrl.replace('/status','/shipment'),staff,{version:'3',provider:'MANUAL TEST',tracking_number:'HTTP-TRACK-1',...shippingProof});
+    const shipmentHtml=await (await request(discountedUrl,staff)).text();
+    const shipmentId=shipmentHtml.match(/action="\/admin\/shipments\/(\d+)\/status"/)[1];
+    for(const [index,status] of ['IN_TRANSIT','DELIVERED'].entries()) {
+      await post(`/admin/shipments/${shipmentId}/status`,staff,{version:String(index+1),order_version:String(index+3),request_key:randomBytes(16).toString('hex'),status,...shippingProof});
+    }
+    const deliveredHtml=await (await request(discountedUrl,customer)).text();
+    assert.match(deliveredHtml,/Đánh giá sản phẩm đã nhận/);
+    const reviewUrl=deliveredHtml.match(/action="([^\"]+\/items\/\d+\/review)"/)[1];
+    assert.equal((await post(reviewUrl,other,{version:'0',rating:'5',content:'HTTP verified review'})).status,404);
+    await post(reviewUrl,customer,{version:'0',rating:'5',content:'HTTP verified review'});
+    assert.doesNotMatch(await (await request('/products/1')).text(),/HTTP verified review/);
+    const moderationHtml=await (await request('/admin/reviews',admin)).text();
+    assert.match(moderationHtml,/HTTP verified review/);
+    const moderationUrl=moderationHtml.match(/action="([^\"]+\/reviews\/\d+\/status)"/)[1];
+    await post(moderationUrl,admin,{version:'1',status:'APPROVED',reason:''});
+    assert.match(await (await request('/products/1')).text(),/HTTP verified review/);
+    await post(reviewUrl,customer,{version:'2',rating:'4',content:'HTTP edited review'});
+    assert.doesNotMatch(await (await request('/products/1')).text(),/HTTP edited review|HTTP verified review/);
+    const paid=await post('/admin/orders/'+discountedUrl.split('/').pop()+'/cod',admin,{version:'5',amount:'19989000',reference:'REPORT-HTTP',note:'Report verified COD'});
+    assert.equal(paid.status,302);
+    const reportDay=new Date(Date.now()+7*3600000).toISOString().slice(0,10);
+    const reportQuery='?from='+reportDay+'&to='+reportDay;
+    const reportHtml=await (await request('/admin/reports'+reportQuery,admin)).text();
+    assert.match(reportHtml,/Doanh thu hàng/);assert.match(reportHtml,/COD thực thu/);
+    const exported=await request('/admin/reports.csv'+reportQuery,admin);
+    assert.equal(exported.status,200);assert.match(exported.headers.get('content-type'),/text\/csv/);
+    assert.match(exported.headers.get('content-disposition'),/attachment/);
+    const reportCsv=await exported.text();
+    assert.ok(reportCsv.includes('"Doanh thu hàng đã giao và thu tiền","","","19989000"'));
+    assert.ok(reportCsv.includes('"COD thực thu","","","19989000"'));
+    const exportAudit=await (await request('/admin/audit'+reportQuery+'&action=REPORT_EXPORT',admin)).text();
+    assert.match(exportAudit,/REPORT_EXPORT/);
+    assert.equal((await post('/admin/audit/1/delete',admin,{})).status,404);
     assert.equal((await request('/orders?from=2026-02-30',customer)).status,400);
     await post('/admin/accounts/3/status',admin,{version:'2',status:'LOCKED',reason:'Requested lock'});
     assert.equal((await request('/profile',customer)).headers.get('location'),'/login');

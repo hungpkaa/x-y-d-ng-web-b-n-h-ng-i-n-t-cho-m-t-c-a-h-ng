@@ -1,0 +1,36 @@
+<h1>Báo cáo cửa hàng</h1>
+<a href="/admin">← Quản lý</a>
+<form method="get" action="/admin/reports" class="filters">
+<label>Từ ngày<input type="date" name="from" value="<%= report.filters.from %>" required></label>
+<label>Đến hết ngày<input type="date" name="to" value="<%= report.filters.to %>" required></label>
+<label>Ngưỡng tồn thấp<input type="number" name="low" min="0" max="1000000" value="<%= report.filters.low %>" required></label>
+<button>Xem báo cáo</button>
+</form>
+<p>Ngày theo giờ Việt Nam (UTC+7), tối đa 366 ngày. Mặc định từ đầu tháng đến hôm nay.</p>
+<a class="button secondary" href="/admin/reports.csv?<%= new URLSearchParams(report.filters).toString() %>">Xuất CSV cùng bộ lọc</a>
+<div class="grid report-summary">
+<section class="panel"><h2>Doanh thu hàng</h2><strong class="price"><%= money(report.summary.revenue) %></strong><p><%= report.summary.recognizedOrders %> đơn đã giao và đã thu tiền.</p></section>
+<section class="panel"><h2>COD thực thu</h2><strong class="price"><%= money(report.summary.cash) %></strong><p>Theo ngày ghi nhận chứng từ, bao gồm phí giao hàng.</p></section>
+<section class="panel"><h2>VNPay thực thu</h2><strong class="price"><%= money(report.summary.onlineCash) %></strong><p>Theo thời điểm giao dịch đã xác thực.</p></section>
+<section class="panel"><h2>Tiền đã hoàn</h2><strong><%= money(report.summary.refunds) %></strong><p>Theo thời điểm đã hoàn trong chứng từ.</p></section>
+<section class="panel"><h2>Thu trừ hoàn</h2><strong><%= money(report.summary.netCash) %></strong><p>Bao gồm phí giao; đây không phải lợi nhuận.</p></section>
+<section class="panel"><h2>Đơn mới</h2><strong><%= report.summary.newOrders %></strong><p><%= report.summary.deliveredOrders %> đơn được giao trong kỳ.</p></section>
+</div>
+<p>Doanh thu hàng = tiền hàng − giảm giá, không gồm phí giao. Ghi nhận khi đơn đủ cả hai điều kiện đã giao và đã thu tiền. Tiền hàng trước giảm: <%= money(report.summary.subtotal) %>; giảm giá: <%= money(report.summary.discount) %>; phí giao của các đơn ghi nhận: <%= money(report.summary.shipping) %>.</p>
+<p>Tiền chờ hoàn hiện tại trên toàn bộ dữ liệu: <%= money(report.pendingRefunds) %>. VNPay đang ở sandbox: số tiền thử nghiệm phải được tách khỏi dữ liệu bán hàng thật.</p>
+<% if(report.unknown) { %><p class="notice"><%= report.unknown %> đơn đã giao/đã thu trong toàn bộ dữ liệu thiếu mốc giao hoặc bằng chứng thu tiền. Các đơn này chưa được cộng vào doanh thu theo kỳ; không tự suy đoán ngày ghi nhận.</p><% } %>
+<h2>Theo ngày</h2>
+<div class="report-table-scroll"><table class="report-table"><thead><tr><th scope="col">Ngày</th><th scope="col">Đơn mới</th><th scope="col">Đã giao</th><th scope="col">Đơn ghi nhận</th><th scope="col">Giảm giá</th><th scope="col">Doanh thu hàng</th><th scope="col">Phí giao</th><th scope="col">COD thực thu</th><th scope="col">VNPay thực thu</th><th scope="col">Đã hoàn</th><th scope="col">Thu trừ hoàn</th></tr></thead><tbody>
+<% report.daily.forEach(row=>{ %><tr><th scope="row"><%= row.date %></th><td><%= row.newOrders %></td><td><%= row.deliveredOrders %></td><td><%= row.recognizedOrders %></td><td><%= money(row.discount) %></td><td><%= money(row.revenue) %></td><td><%= money(row.shipping) %></td><td><%= money(row.cash) %></td><td><%= money(row.onlineCash) %></td><td><%= money(row.refunds) %></td><td><%= money(row.netCash) %></td></tr><% }) %>
+</tbody></table></div>
+<h2>Trạng thái hiện tại của đơn tạo trong kỳ</h2>
+<% if(!report.statuses.length) { %><p>Chưa có đơn trong kỳ.</p><% } %>
+<div class="grid"><% report.statuses.forEach(row=>{ %><section class="panel"><strong><%= labels[row.status]||row.status %></strong><p><%= row.count %> đơn</p></section><% }) %></div>
+<h2>Top 10 SKU đã giao trong kỳ</h2>
+<p>Xếp theo số lượng đã giao, kể cả đơn COD chưa thu. Tiền hàng của SKU là giá lúc mua trước giảm giá.</p>
+<% if(!report.bestSellers.length) { %><p>Chưa có sản phẩm được giao trong kỳ.</p><% } %>
+<% report.bestSellers.forEach(row=>{ %><article class="row panel"><div><strong><%= row.name %></strong><p><%= row.sku %></p></div><span><%= row.quantity %> sản phẩm</span><span><%= money(row.gross) %></span></article><% }) %>
+<h2>SKU tồn thấp hiện tại</h2>
+<p><%= report.lowStock.length %> SKU đang bán có tồn khả dụng ≤ <%= report.filters.low %>. Đây là tồn hiện tại, không phải tồn cuối kỳ. Hiển thị tối đa 20 SKU; CSV có toàn bộ danh sách.</p>
+<% if(!report.lowStock.length) { %><p>Không có SKU tồn thấp.</p><% } %>
+<% report.lowStock.slice(0,20).forEach(row=>{ %><article class="row panel"><div><strong><%= row.name %></strong><p><%= row.sku %></p></div><span>Trong kho: <%= row.on_hand %> · Đang giữ: <%= row.reserved %> · Khả dụng: <%= row.available %></span></article><% }) %>

@@ -1,10 +1,12 @@
 # Electro Store
 
+Đối chiếu đầy đủ docs tại [34 use case và phần còn thiếu](docs/12_ECARTS_ET_IMPLEMENTATION.md). Đã thêm [vận đơn thủ công, giao thất bại và nhận hàng về](docs/13_SU_DUNG_VAN_CHUYEN.md) theo UC-25/26.
+
 ## Bộ tài liệu phân tích và thiết kế
 
 Đọc [docs/README.md](docs/README.md) để xem tác nhân, phân quyền, 34 đặc tả use case, sơ đồ UML tổng quát/theo tác nhân, sơ đồ luồng và ERD toàn hệ thống. Đây là thiết kế mục tiêu; danh sách chức năng đã triển khai bên dưới chỉ mô tả bản demo hiện tại.
 
-Bản đầu của website bán đồ điện tử dùng Node.js 24+, Express, EJS và SQLite tích hợp trong Node.js. Chưa cần cài máy chủ cơ sở dữ liệu riêng.
+Website bán đồ điện tử dùng Node.js 24+, Express, EJS và PostgreSQL khi cấu hình `DATABASE_URL`; vẫn hỗ trợ SQLite cho demo và kiểm thử. Xem [hướng dẫn PostgreSQL](docs/11_POSTGRESQL.md) để cấu hình, chuyển dữ liệu hiện có và chạy bộ kiểm tra PostgreSQL.
 
 ## Chạy trên Windows PowerShell
 
@@ -19,7 +21,7 @@ Mở http://localhost:3000. Đăng nhập bằng tài khoản quản trị vừa
 
 `npm.cmd` tránh lỗi PowerShell chặn script `npm.ps1`; không cần đổi execution policy. Có thể chạy `npm.cmd start` thay cho chế độ tự tải lại.
 
-SQLite được tạo tại `data/store.sqlite`; dữ liệu mẫu được thêm khi chưa có sản phẩm. Giá và cấu hình sản phẩm mẫu chỉ phục vụ demo. Không commit dữ liệu thật hoặc mật khẩu vào Git.
+Khi không có `DATABASE_URL`, SQLite được tạo tại `data/store.sqlite`; khi có biến này, ứng dụng lưu dữ liệu trong PostgreSQL. Dữ liệu mẫu được thêm khi chưa có sản phẩm. Giá và cấu hình sản phẩm mẫu chỉ phục vụ demo. Không commit dữ liệu thật hoặc mật khẩu vào Git.
 
 ## Đã triển khai
 
@@ -42,6 +44,19 @@ SQLite được tạo tại `data/store.sqlite`; dữ liệu mẫu được thê
 - Giao thành công giữ COD ở UNPAID; chỉ ADMIN xác nhận đủ tiền thực thu với mã chứng từ/ghi chú mới chuyển PAID. Không tự đánh dấu đã hoàn tiền khi hủy đơn đã thu.
 - So sánh tại `/compare`: tối đa 3 SKU cùng danh mục, giá/cấu hình/thông số có kiểu và đơn vị, đánh dấu khác biệt. Danh sách lưu trong phiên; SKU ẩn/tắt bán được tự loại bỏ, SKU hết hàng vẫn so sánh được.
 - Gợi ý ở catalog/chi tiết và `/recommendations`: tối đa 6 sản phẩm còn hàng, mỗi sản phẩm một SKU phù hợp. Xếp theo danh mục/thương hiệu/giá gần, lượng đã giao và ID; chọn cấu hình tham chiếu hoặc lọc danh mục/thương hiệu/ngân sách. Hiển thị lý do, không giả dữ liệu bán chạy.
+- ADMIN tạo/sửa/bật/tắt mã tại `/admin/promotions`; khách áp dụng một mã ở checkout. Mã giảm tiền hàng theo số tiền/phần trăm, có phạm vi sản phẩm, thời hạn và giới hạn lượt; đặt đơn giữ lượt, hủy trước giao trả lượt, bàn giao dùng lượt. Đơn giữ snapshot mức giảm.
+- CUSTOMER viết/sửa đánh giá trong đơn DELIVERED; ADMIN duyệt tại `/admin/reviews`. Chỉ đánh giá được duyệt mới hiển thị công khai và tính điểm trung bình; khách sửa cần duyệt lại.
+- ADMIN xem báo cáo tại `/admin/reports`: theo ngày Việt Nam, doanh thu hàng đã giao/thu đủ, COD thực thu, trạng thái đơn, top 10 SKU đã giao và tồn thấp hiện tại. Xuất CSV cùng bộ lọc, có che công thức và ghi audit lần xuất.
+- ADMIN tra cứu `/admin/audit` theo ngày, người thao tác, hành động, loại/mã đối tượng; phân trang 20 mục, xem trước/sau đã che trường nhạy cảm. Không có chức năng sửa/xóa nhật ký.
+- Quên mật khẩu tại `/forgot-password`: gửi liên kết SMTP một lần, hết hạn 30 phút; mật khẩu mới vô hiệu các phiên cũ. Cần cấu hình email trước khi sử dụng.
+- CUSTOMER lưu tối đa 20 địa chỉ tại `/addresses`, chọn mặc định hoặc địa chỉ khác khi checkout. Đơn cũ giữ nguyên thông tin nhận hàng.
+- Hỗ trợ theo đơn tại `/support`: khách tạo từ chi tiết đơn; STAFF/ADMIN xử lý tại `/admin/support`, trả lời công khai hoặc ghi chú nội bộ. Khách không thấy tin nội bộ, mở lại ticket đã đóng trong 7 ngày; danh sách/hội thoại phân trang.
+- Checkout chọn COD hoặc VNPay sandbox khi đã cấu hình. VNPay cập nhật tiền từ IPN đã xác thực, không từ return trình duyệt; đơn quá hạn 15 phút được hủy/giải phóng tồn. Callback trùng/muộn được xử lý theo ledger.
+- ADMIN ghi nhận hoàn toàn bộ khoản thu cho đơn hủy hoặc khoản thu dư tại `/admin/refunds`, có mã đối soát/bằng chứng/thời điểm. Không tự gửi lệnh hoàn tiền ngân hàng/VNPay. Báo cáo bổ sung tiền VNPay thu, tiền hoàn, thu trừ hoàn và khoản chờ hoàn.
+
+## Cấu hình email và VNPay
+
+Sao chép `.env.example` thành `.env`, nhập SMTP, `APP_URL`, `VNPAY_TMN_CODE` và `VNPAY_HASH_SECRET` do nhà cung cấp cấp. Các lệnh start/dev tự đọc `.env` nếu có; file thật không được commit. Xem [hướng dẫn cấu hình và kiểm thử](docs/10_CAU_HINH_EMAIL_VNPAY.md) để đăng ký URL IPN/Return public và kiểm tra email. Chưa có cấu hình thì khôi phục mật khẩu và VNPay chưa khả dụng; các chức năng còn lại vẫn chạy.
 
 ## Kiểm tra
 
@@ -54,9 +69,13 @@ Kiểm thử nghiệp vụ gồm quyền tài khoản, vô hiệu phiên khi kh�
 
 ## Giới hạn của bản đầu
 
+Cập nhật 07/10/2026: 77/77 test và smoke test đạt. Đã kiểm tra email giả/IPN ký bằng khóa kiểm thử; chưa chạy SMTP thật, merchant VNPay thật hoặc giao diện trực quan bằng trình duyệt.
+
 Phiên đăng nhập và giỏ hàng lưu trong SQLite, giữ qua khởi động lại trong thời hạn cookie 24 giờ. Khóa đặt hàng gắn với khách hàng và lưu CSDL: gửi lại cùng thông tin trả về đơn cũ; đổi thông tin với cùng khóa bị chặn. Xác nhận thanh toán có hiệu lực 15 phút và kiểm tra lại giá, giỏ, tồn. Khóa ký phiên local lưu CSDL; production cần SESSION_SECRET ổn định và cấu hình HTTPS/proxy. Logout xóa phiên; chưa đồng bộ giỏ nhiều thiết bị. DB_PATH cho phép chọn file SQLite (mặc định data/store.sqlite).
 
-Danh mục/thương hiệu có bảng riêng; sản phẩm có nhiều SKU. Các cột giá/tồn cũ của products được giữ để tương thích nhưng giá/tồn bán hàng lấy từ product_variants. Chưa có danh mục phân cấp, sổ nhiều địa chỉ, quên mật khẩu, khuyến mãi, đánh giá, hỗ trợ hoặc thống kê. Gợi ý dùng quy tắc catalog và lượng đã giao, chưa cá nhân hóa theo lịch sử duyệt/mua hoặc tư vấn theo mục đích sử dụng. Danh mục và định nghĩa thông số chưa phân trang. Audit đã ghi cho sản phẩm, tài khoản, đơn và COD nhưng chưa có trang tra cứu chung. Phí giao hàng cố định, mặc định 0 VND cho demo; chưa có biểu phí theo địa bàn/trọng lượng hoặc tích hợp thanh toán/vận chuyển. COD xác nhận thủ công sau đối soát, chưa có upload chứng từ hay hoàn tiền. Đơn PAID cũ được giữ nguyên trạng thái khi nâng cấp, không tự tạo chứng từ cho lịch sử cũ.
+Danh mục/thương hiệu có bảng riêng; sản phẩm có nhiều SKU. Các cột giá/tồn cũ của products được giữ để tương thích nhưng giá/tồn bán hàng lấy từ product_variants. Chưa có danh mục phân cấp. Gợi ý dùng quy tắc catalog và lượng đã giao, chưa cá nhân hóa theo lịch sử duyệt/mua hoặc tư vấn theo mục đích sử dụng. Danh mục và định nghĩa thông số chưa phân trang. Phí giao hàng cố định, mặc định 0 VND cho demo; chưa có biểu phí theo địa bàn/trọng lượng hoặc tích hợp vận chuyển. COD xác nhận thủ công sau đối soát; hoàn tiền chỉ ghi nhận toàn bộ từng khoản thu sau khi thực hiện ngoài hệ thống, chưa upload tệp chứng từ/hoàn một phần/đổi trả sau giao. Đơn PAID cũ được giữ nguyên khi nâng cấp; chỉ chứng từ COD thật có sẵn được chuyển sang ledger, không tạo bằng chứng giả cho lịch sử cũ.
+
+Báo cáo giới hạn 366 ngày, mặc định tháng hiện tại theo UTC+7. Doanh thu hàng chỉ ghi nhận DELIVERED/PAID khi đủ lịch sử giao và bằng chứng thu tiền, không dùng ngày tạo đơn thay thế. Đơn cũ thiếu bằng chứng được báo riêng. COD thực thu theo ngày ghi chứng từ; VNPay theo thời điểm cổng báo đã thu, tiền hoàn theo thời điểm chứng từ. Thu trừ hoàn không phải lợi nhuận. Tồn thấp là tồn hiện tại, UI hiển thị 20 SKU đầu và CSV có toàn bộ; không phải tồn cuối kỳ. Nhật ký che trường nhạy cảm theo tên khóa JSON, không tự phát hiện bí mật trong ghi chú tự do. Email chưa có hàng đợi/retry bền; VNPay chưa có querydr chủ động đối soát khi IPN mất. Sandbox cần CSDL riêng với dữ liệu bán thật.
 
 ## Nâng cấp CSDL
 
@@ -66,8 +85,10 @@ Danh mục/thương hiệu có bảng riêng; sản phẩm có nhiều SKU. Các
 
 Đã hoàn thành bước 1–6: catalog, SKU/kho, ảnh/thông số, phiên/chống đặt trùng, tài khoản/đơn hàng và so sánh/gợi ý. Chi tiết từng bước tại [tiến độ](docs/09_TIEN_DO_TRIEN_KHAI.md).
 
-1. Khuyến mãi và đánh giá mua hàng.
-2. Báo cáo và trang nhật ký; phân trang các danh sách còn lại.
-3. Thanh toán sandbox, vận chuyển theo địa bàn, kiểm thử tích hợp và triển khai.
+Khuyến mãi/đánh giá và báo cáo COD/nhật ký đã có; phạm vi và giới hạn tại [tiến độ](docs/09_TIEN_DO_TRIEN_KHAI.md).
+
+1. Kiểm tra giao diện trực quan; phân trang các danh sách còn lại.
+2. Cấu hình SMTP/merchant VNPay, kiểm thử tích hợp trên domain public; bổ sung đối soát querydr và hàng đợi email.
+3. Vận chuyển theo địa bàn, kiểm thử triển khai và vận hành.
 
 Xem `DANH_GIA_VA_KE_HOACH_DU_AN.md` để biết phạm vi yêu cầu ban đầu. Báo cáo đó ghi nhận hiện trạng trước khi khởi tạo mã nguồn này.

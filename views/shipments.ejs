@@ -1,0 +1,4 @@
+<h1>Quản lý vận chuyển</h1><a href="/admin/orders">Danh sách đơn hàng</a>
+<form method="get" class="filters"><label>Mã vận đơn/mã đơn<input name="q" value="<%= filters.q %>"></label><label>Trạng thái<select name="status"><option value="">Tất cả</option><% Object.entries(shipmentLabels).forEach(([value,label])=>{ %><option value="<%= value %>" <%= filters.status===value?'selected':'' %>><%= label %></option><% }); %></select></label><button>Lọc</button></form>
+<div class="table-scroll"><table><thead><tr><th>Đơn</th><th>Hãng</th><th>Mã vận đơn</th><th>Trạng thái</th><th>COD cần thu</th></tr></thead><tbody><% rows.forEach(row=>{ %><tr><td><a href="/orders/<%= row.order_id %>">#<%= row.order_id %></a></td><td><%= row.provider %></td><td><%= row.tracking_number %></td><td><%= shipmentLabels[row.status] %></td><td><%= money(row.cod_amount) %></td></tr><% }); %></tbody></table></div>
+<%- include('record-pagination',{recordLabel:'vận đơn'}) %>

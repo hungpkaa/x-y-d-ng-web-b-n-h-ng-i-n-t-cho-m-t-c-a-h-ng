@@ -2,7 +2,7 @@
 
 Phiên bản 1.0 — 05/10/2026. Mô hình quan hệ mục tiêu, **chưa phải schema SQLite hiện tại**. Phù hợp các UC-01..34 và BR-01..16. ERD chia theo module để đọc được; tên bảng nối giữa các sơ đồ là cùng một bảng, không phải bản sao. PK/FK/UK lần lượt là khóa chính/ngoại/unique.
 
-Schema thực tế đã triển khai đến migration v5 và ERD bổ sung cho tài khoản/đơn/COD được ghi tại [tiến độ bước 5](09_TIEN_DO_TRIEN_KHAI.md). Bản local dùng một địa chỉ mặc định trên users, phiên JSON và phí cố định shipping_policy; chưa có đầy đủ addresses/payments/shipping_rates như mô hình mục tiêu dưới đây.
+Schema thực tế đến SQLite v9 và PostgreSQL v2: catalog/SKU, phiên JSON, khuyến mãi/đánh giá, địa chỉ/hỗ trợ/reset, ledger COD/VNPay/hoàn tiền, shipments/shipment_events thủ công. [Đối chiếu triển khai](12_ECARTS_ET_IMPLEMENTATION.md) ghi rõ giới hạn. Mô hình dưới đây vẫn là mục tiêu: phí còn cố định; chưa có shipping_rates, integration_jobs, payment_exceptions đầy đủ, API vận chuyển hoặc querydr.
 
 ## 1. ERD tài khoản, giỏ hàng và catalog
 

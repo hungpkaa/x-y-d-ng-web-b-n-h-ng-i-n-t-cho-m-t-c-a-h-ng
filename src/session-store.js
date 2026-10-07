@@ -1,7 +1,7 @@
 const session = require('express-session');
 const { randomBytes } = require('node:crypto');
 
-class SQLiteSessionStore extends session.Store {
+class DatabaseSessionStore extends session.Store {
   constructor(db) { super(); this.db=db; }
   get(sid,callback) {
     try {
@@ -32,4 +32,4 @@ function sessionSecret(db) {
   db.prepare("INSERT OR IGNORE INTO app_settings(key,value) VALUES('development_session_secret',?)").run(randomBytes(32).toString('hex'));
   return db.prepare("SELECT value FROM app_settings WHERE key='development_session_secret'").get().value;
 }
-module.exports={SQLiteSessionStore,sessionSecret};
+module.exports={DatabaseSessionStore,SQLiteSessionStore:DatabaseSessionStore,sessionSecret};

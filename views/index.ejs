@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Electro Store</title><link rel="stylesheet" href="/style.css"></head>
-<body><header><a class="logo" href="/">⚡ Electro Store</a><nav><a href="/compare">So sánh (<%= comparisonCount %>)</a><a href="/recommendations">Gợi ý</a><a href="/">Sản phẩm</a><% if(!user || user.role==='CUSTOMER') { %><a href="/cart">Giỏ hàng (<%= cartCount %>)</a><% } %><% if(user) { %><% if(user.role==='CUSTOMER') { %><a href="/orders">Đơn của tôi</a><% } %><% if(user.role !== 'CUSTOMER') { %><a href="/admin">Quản lý</a><% } %><a href="/profile"><%= user.name %></a><form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="secondary">Đăng xuất</button></form><% } else { %><a href="/login">Đăng nhập</a><a href="/register">Đăng ký</a><% } %></nav></header>
+<body><header><a class="logo" href="/">⚡ Electro Store</a><nav><a href="/compare">So sánh (<%= comparisonCount %>)</a><a href="/recommendations">Gợi ý</a><a href="/recent">Đã xem</a><a href="/">Sản phẩm</a><% if(!user || user.role==='CUSTOMER') { %><a href="/cart">Giỏ hàng (<%= cartCount %>)</a><% } %><% if(user) { %><% if(user.role==='CUSTOMER') { %><a href="/favorites">Yêu thích</a><a href="/notifications">Thông báo (<%= unreadNotifications %>)</a><a href="/support">Hỗ trợ</a><a href="/orders">Đơn của tôi</a><% } %><% if(user.role !== 'CUSTOMER') { %><a href="/admin/dashboard">Quản lý</a><% } %><a href="/profile"><%= user.name %></a><form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="secondary">Đăng xuất</button></form><% } else { %><a href="/login">Đăng nhập</a><a href="/register">Đăng ký</a><% } %></nav></header>
+<% if(managementLayout) { %><div class="admin-layout"><%- include('admin-sidebar') %><% } %>
 <main><% if(notice) { %><p class="notice" role="status"><%= notice %></p><% } %>
 <% if(page === 'catalog') { %>
 <section class="hero"><p>CÔNG NGHỆ CHO CUỘC SỐNG</p><h1>Tìm thiết bị phù hợp với bạn.</h1><p>Điện thoại, laptop và phụ kiện cho học tập, làm việc và giải trí.</p></section>
@@ -11,7 +12,7 @@
 <% } else if(page === 'product') { %>
 <%- include('product-skus') %>
 <% } else if(page === 'login' || page === 'register') { %>
-<section class="panel narrow"><h1><%= page==='login' ? 'Đăng nhập' : 'Tạo tài khoản' %></h1><form method="post" action="/<%= page %>"><input type="hidden" name="_csrf" value="<%= csrf %>"><% if(page==='register') { %><label>Họ tên<input name="name" minlength="2" maxlength="80" autocomplete="name" required></label><% } %><label>Email<input type="email" name="email" maxlength="150" autocomplete="email" required></label><label>Mật khẩu<input type="password" name="password" minlength="<%= page==='register' ? 10 : 1 %>" maxlength="128" autocomplete="<%= page==='register' ? 'new-password' : 'current-password' %>" required></label><% if(page==='register') { %><small>Ít nhất 10 ký tự.</small><% } %><button><%= page==='login' ? 'Đăng nhập' : 'Đăng ký' %></button></form></section>
+<section class="panel narrow"><h1><%= page==='login' ? 'Đăng nhập' : 'Tạo tài khoản' %></h1><form method="post" action="/<%= page %>"><input type="hidden" name="_csrf" value="<%= csrf %>"><% if(page==='register') { %><label>Họ tên<input name="name" minlength="2" maxlength="80" autocomplete="name" required></label><% } %><label>Email<input type="email" name="email" maxlength="150" autocomplete="email" required></label><label>Mật khẩu<input type="password" name="password" minlength="<%= page==='register' ? 10 : 1 %>" maxlength="128" autocomplete="<%= page==='register' ? 'new-password' : 'current-password' %>" required></label><% if(page==='register') { %><small>Ít nhất 10 ký tự.</small><% } %><button><%= page==='login' ? 'Đăng nhập' : 'Đăng ký' %></button></form><% if(page==='login') { %><p><a href="/forgot-password">Quên mật khẩu?</a></p><% } %></section>
 <% } else if(page==='cart') { %>
 <h1>Giỏ hàng</h1><% if(!items.length) { %><p>Giỏ hàng đang trống.</p><a class="button" href="/">Khám phá sản phẩm</a><% } else { %><% items.forEach(item=>{ %><article class="row panel"><div><h2><%= item.name %></h2><p><%= item.sku %></p><p><%= item.color %> <%= item.configuration %></p><p><%= money(item.price) %> · Còn <%= item.stock %></p></div><form method="post" action="/cart"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="id" value="<%= item.id %>"><label>Số lượng (0 để xóa)<input type="number" name="quantity" min="0" max="99" value="<%= item.quantity %>" required></label><button>Cập nhật</button></form><strong><%= money(item.price*item.quantity) %></strong></article><% }) %><h2>Tổng: <%= money(total) %></h2><a class="button" href="/checkout">Tiến hành đặt hàng</a><% } %>
 <% } else if(page==='checkout') { %>
@@ -28,6 +29,22 @@
 <% } else if(page==='accounts') { %><%- include('accounts') %>
 <% } else if(page==='account') { %><%- include('account') %>
 <% } else if(page==='shipping') { %><%- include('shipping') %>
+<% } else if(page==='promotions') { %><%- include('promotions') %>
+<% } else if(page==='promotion-form') { %><%- include('promotion-form') %>
+<% } else if(page==='reviews-admin') { %><%- include('reviews-admin') %>
+<% } else if(page==='reports') { %><%- include('reports') %>
+<% } else if(page==='audit') { %><%- include('audit') %>
+<% } else if(page==='forgot-password') { %><%- include('forgot-password') %>
+<% } else if(page==='reset-password') { %><%- include('reset-password') %>
+<% } else if(page==='addresses') { %><%- include('addresses') %>
+<% } else if(page==='support') { %><%- include('support') %>
+<% } else if(page==='support-new') { %><%- include('support-new') %>
+<% } else if(page==='support-detail') { %><%- include('support-detail') %>
+<% } else if(page==='refunds') { %><%- include('refunds') %>
+<% } else if(page==='shipments') { %><%- include('shipments') %>
+<% } else if(page==='dashboard') { %><%- include('dashboard') %>
+<% } else if(page==='saved-products') { %><%- include('saved-products') %>
+<% } else if(page==='notifications') { %><%- include('notifications') %>
 <% } else if(page==='admin') { %><%- include('products-admin') %>
 <% } %>
-</main><footer>Electro Store · Website bán đồ điện tử · Bản phát triển</footer></body></html>
+</main><% if(managementLayout) { %></div><% } %><footer>Electro Store · Website bán đồ điện tử · Bản phát triển</footer></body></html>

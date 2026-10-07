@@ -13,7 +13,7 @@ function verifyPassword(password, encoded) {
   const expected = Buffer.from(hash, 'hex');
   return expected.length === 64 && timingSafeEqual(expected, scryptSync(password, salt, 64));
 }
-function openDatabase(file, targetVersion = 6) {
+function openDatabase(file, targetVersion = 8) {
   const db = new DatabaseSync(file);
   db.exec(`PRAGMA foreign_keys = ON;
     PRAGMA busy_timeout = 5000;
@@ -53,8 +53,19 @@ function seed(db) {
   }
 }
 function defaultDatabase() {
+  if (process.env.DATABASE_URL && process.env.DB_PATH !== ':memory:') {
+    const {PostgresDatabase}=require('./postgres');
+    const db=new PostgresDatabase(process.env.DATABASE_URL,{schema:process.env.DATABASE_SCHEMA||'public'});
+    try {
+      require('./postgres-migrations').migratePostgres(db);
+      db.exec('BEGIN IMMEDIATE');
+      try {seed(db);db.exec('COMMIT');} catch(error) {db.exec('ROLLBACK');throw error;}
+      return db;
+    }
+    catch(error) {db.close();throw error;}
+  }
   if (process.env.DB_PATH === ':memory:') {
-    const db = openDatabase(':memory:');
+    const db = openDatabase(':memory:',10);
     seed(db);
     return db;
   }
@@ -62,8 +73,8 @@ function defaultDatabase() {
   mkdirSync(directory, { recursive: true });
   const file=process.env.DB_PATH ? resolve(process.env.DB_PATH) : join(directory,'store.sqlite');
   mkdirSync(dirname(file),{recursive:true});
-  const db = openDatabase(file);
+  const db = openDatabase(file,10);
   seed(db);
   return db;
 }
-module.exports = { openDatabase, defaultDatabase, hashPassword, verifyPassword };
+module.exports = { openDatabase, defaultDatabase, hashPassword, verifyPassword, seed };

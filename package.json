@@ -7,16 +7,23 @@
     "node": ">=24"
   },
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "node --watch src/server.js",
+    "start": "node --env-file-if-exists=.env src/server.js",
+    "dev": "node --env-file-if-exists=.env --watch src/server.js",
     "test": "node --test",
-    "test:smoke": "node scripts/smoke.js"
+    "test:smoke": "node scripts/smoke.js",
+    "db:check": "node --env-file-if-exists=.env scripts/check-postgres.js",
+    "db:backup": "node --env-file-if-exists=.env scripts/backup-postgres.js",
+    "db:import": "node --env-file-if-exists=.env scripts/import-sqlite-to-postgres.js",
+    "test:postgres": "node --env-file-if-exists=.env scripts/run-postgres-checks.js",
+    "test:smoke:postgres": "node --env-file-if-exists=.env scripts/smoke.js --postgres"
   },
   "dependencies": {
     "ejs": "^3.1.10",
     "express": "^5.1.0",
     "express-session": "^1.18.2",
     "helmet": "^8.1.0",
+    "nodemailer": "^10.0.15",
+    "pg": "^8.23.1",
     "sharp": "^0.35.5"
   }
 }

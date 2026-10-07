@@ -1,0 +1,18 @@
+<section class="panel"><h2>Vận chuyển</h2>
+<% const shipment=shipping.shipment; if(shipment) { %>
+<p><%= shipment.provider %> · Mã vận đơn: <strong><%= shipment.tracking_number %></strong></p>
+<p><%= shipmentLabels[shipment.status] %> · COD cần thu khi tạo vận đơn: <%= money(shipment.cod_amount) %></p>
+<% if(shipment.status==='CANCELLED' && user.role!=='CUSTOMER') { %><p>Đơn đã hủy tại cửa hàng. Nhân viên cần hủy vận đơn với hãng và kiểm tra xác nhận hủy.</p><% } %>
+<% if(user.role!=='CUSTOMER' && shipmentTransitions[shipment.status].length) { %>
+<form method="post" action="/admin/shipments/<%= shipment.id %>/status">
+<input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="version" value="<%= shipment.version %>"><input type="hidden" name="order_version" value="<%= order.version %>"><input type="hidden" name="request_key" value="<%= shipmentRequestKey %>">
+<label>Kết quả thực tế<select name="status"><% shipmentTransitions[shipment.status].forEach(status=>{ %><option value="<%= status %>"><%= shipmentLabels[status] %></option><% }); %></select></label>
+<%- include('shipment-proof') %><p>Chỉ xác nhận đã nhận hàng về khi hàng thực tế đã về kho. Giao thất bại chưa cộng lại tồn.</p><button>Ghi nhận kết quả vận chuyển</button></form>
+<% } %>
+<h3>Lịch sử vận chuyển</h3><% shipping.events.forEach(event=>{ %><p><%= event.occurred_at %> UTC · <%= shipmentLabels[event.status] %><% if(user.role!=='CUSTOMER') { %> · <%= event.evidence_ref %> · <%= event.note %><% } %></p><% }); %>
+<% } else { %><p>Chưa có vận đơn.</p>
+<% if(user.role!=='CUSTOMER' && ['PREPARING','SHIPPING'].includes(order.status)) { %>
+<form method="post" action="/admin/orders/<%= order.id %>/shipment"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="version" value="<%= order.version %>">
+<label>Hãng vận chuyển<input name="provider" minlength="2" maxlength="80" required></label><label>Mã vận đơn thực tế<input name="tracking_number" minlength="3" maxlength="100" required></label>
+<%- include('shipment-proof') %><button>Ghi nhận vận đơn thủ công</button></form>
+<% } %><% } %></section>

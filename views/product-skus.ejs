@@ -1,6 +1,7 @@
 <a href="/">← Danh sách sản phẩm</a>
 <section class="panel"><small><%= product.brand %> · <%= product.category %></small><h1><%= product.name %></h1><p><%= product.description %></p></section>
 <div class="gallery"><% images.forEach(image=>{ %><img src="/media/<%= image.storage_key %>" alt="<%= image.alt_text %>" loading="lazy"><% }) %></div>
+<%- include('product-engagement') %>
 <h2>Chọn màu và cấu hình</h2>
 <div class="grid"><% variants.forEach(v=>{ %>
   <article id="sku-<%= v.id %>" class="panel <%= recommendation.anchor?.id===v.id?'selected-sku':'' %>"><h3><%= v.color || 'Cấu hình tiêu chuẩn' %></h3><p><%= v.configuration %></p><small>Mã: <%= v.sku %></small><h2 class="price"><%= money(v.price) %></h2><p>Còn <%= v.stock %> sản phẩm</p>
@@ -8,6 +9,7 @@
     <a href="/products/<%= product.id %>?sku=<%= v.id %>#sku-<%= v.id %>">Xem gợi ý theo cấu hình này</a>
     <% if(v.attributes.length) { %><dl class="specs"><% v.attributes.forEach(d=>{ %><dt><%= d.label %></dt><dd><%= d.data_type==='NUMBER'?(d.value_number===null?'Chưa có thông tin':d.value_number+(d.unit?' '+d.unit:'')):d.data_type==='BOOLEAN'?(d.value_boolean===null?'Chưa có thông tin':d.value_boolean?'Có':'Không'):(d.value_text??'Chưa có thông tin') %></dd><% }) %></dl><% } %>
     <form method="post" action="/cart"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="id" value="<%= v.id %>"><input type="hidden" name="action" value="add"><label>Số lượng<input type="number" name="quantity" value="1" min="1" max="<%= Math.max(1,Math.min(v.stock,99)) %>" required></label><button <%= v.stock ? '' : 'disabled' %>>Thêm vào giỏ hàng</button></form>
+    <%- include('sku-watch',{v}) %>
   </article>
 <% }) %></div>
 <% if(!variants.length) { %><p>Chưa có cấu hình đang bán.</p><% } %>

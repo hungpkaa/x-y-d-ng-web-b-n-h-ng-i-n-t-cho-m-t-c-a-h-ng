@@ -1,9 +1,14 @@
 <h1>Quản lý sản phẩm</h1>
+<a class="button secondary" href="/admin/shipments">Quản lý vận chuyển</a>
+<a class="button secondary" href="/admin/support">Hỗ trợ khách hàng</a>
+<% if(user.role==='ADMIN') { %><a class="button secondary" href="/admin/refunds">Ghi nhận hoàn tiền</a><% } %>
+<% if(user.role==='ADMIN') { %><a class="button secondary" href="/admin/reports">Báo cáo</a><a class="button secondary" href="/admin/audit">Nhật ký quản trị</a><% } %>
 <% if(user.role==='ADMIN') { %><a class="button secondary" href="/admin/promotions">Khuyến mãi</a><a class="button secondary" href="/admin/reviews">Duyệt đánh giá</a><% } %>
 <% if(user.role==='ADMIN') { %><a class="button secondary" href="/admin/catalog">Danh mục và thương hiệu</a><% } %>
 <% if(user.role==='ADMIN') { %><a class="button secondary" href="/admin/attributes">Thông số kỹ thuật</a><% } %>
 <a class="button" href="/admin/orders">Xử lý đơn hàng</a>
 <% if(user.role==='ADMIN') { %><a class="button secondary" href="/admin/accounts">Tài khoản và nhân viên</a><a class="button secondary" href="/admin/shipping">Phí giao hàng</a><% } %>
-<section class="panel"><h2>Tạo bản nháp</h2><p>Thêm thông tin sản phẩm, sau đó tạo SKU theo màu/cấu hình. Quản trị viên đặt giá và công bố.</p>
-<form method="post" action="/admin/products"><input type="hidden" name="_csrf" value="<%= csrf %>"><div class="formgrid"><label>Tên<input name="name" maxlength="120" required></label><%- include('catalog-fields',{product:null}) %><label>Mô tả<textarea name="description" maxlength="2000" required></textarea></label></div><button>Tạo bản nháp</button></form></section>
+<section class="panel" id="add-product"><h2>Thêm sản phẩm mới</h2><p>Nhập thông tin và chọn ảnh sản phẩm. Sau khi thêm, bạn có thể tạo SKU theo màu/cấu hình; quản trị viên đặt giá và công bố.</p>
+<form id="product-create" method="post" action="/admin/products"><input type="hidden" name="_csrf" value="<%= csrf %>"><div class="formgrid"><label>Tên<input name="name" maxlength="120" required></label><%- include('catalog-fields',{product:null}) %><label>Mô tả<textarea name="description" maxlength="2000" required></textarea></label><label>Ảnh sản phẩm (tùy chọn)<input type="file" name="product_image" accept="image/jpeg,image/png,image/webp"><small>JPEG, PNG, WebP · tối đa 5MB. Có thể thêm nhiều ảnh tại trang chỉnh sửa.</small></label><label>Mô tả ảnh<input name="image_alt" maxlength="120" placeholder="Mặc định dùng tên sản phẩm"></label></div><button>Thêm sản phẩm (bản nháp)</button><p id="product-create-status" role="status" aria-live="polite"></p><noscript>Bật JavaScript để tải ảnh cùng lúc thêm sản phẩm. Khi chưa bật, bạn vẫn tạo được bản nháp.</noscript></form></section>
+<script src="/admin-content.js" defer></script>
 <h2>Danh sách sản phẩm</h2><%- include('product-filters',{management:true}) %><% products.forEach(p=>{ %><a class="row panel" href="/admin/products/<%= p.id %>"><strong><%= p.name %></strong><span><%= p.category %> · <%= p.brand %></span><span><%= {DRAFT:'Bản nháp',ACTIVE:'Đang bán',HIDDEN:'Đã ẩn'}[p.status] %></span><span>Thông tin và SKU →</span></a><% }) %><% if(!products.length) { %><p>Không có sản phẩm phù hợp.</p><% } %><%- include('pagination') %>

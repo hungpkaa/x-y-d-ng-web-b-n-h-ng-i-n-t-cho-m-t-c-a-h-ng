@@ -7,7 +7,7 @@ test('Migration v5 giữ tài khoản, đơn, tiền đã thu, phiên và khóa 
   try {
     db.exec("INSERT INTO users(id,name,email,password,role) VALUES(1,'Customer','c@test.com','salt:hash','CUSTOMER'); INSERT INTO orders(id,user_id,recipient,phone,address,total,status,payment_status) VALUES(1,1,'Old recipient','0901234567','Original address',123000,'DELIVERED','PAID'); INSERT INTO sessions(sid,data,expires_at) VALUES('existing','{\"userId\":1,\"cart\":{\"1\":2}}',9999999999999); INSERT INTO checkout_requests(user_id,request_key,quote_json,expires_at,payload_hash,order_id) VALUES(1,'old-key','[[1,1,123000]]',100,'original-hash',1)");
     const beforeSession=db.prepare('SELECT data FROM sessions').get().data;
-    migrate(db);migrate(db);
+    migrate(db, ':memory:', 5);migrate(db, ':memory:', 5);
     const user=db.prepare('SELECT * FROM users').get(),order=db.prepare('SELECT * FROM orders').get(),request=db.prepare('SELECT * FROM checkout_requests').get();
     assert.equal(user.password,'salt:hash');assert.equal(user.role,'CUSTOMER');assert.equal(user.auth_version,1);assert.equal(user.status,'ACTIVE');
     assert.equal(order.total,123000);assert.equal(order.subtotal,123000);assert.equal(order.shipping_fee,0);assert.equal(order.payment_status,'PAID');assert.equal(order.address,'Original address');

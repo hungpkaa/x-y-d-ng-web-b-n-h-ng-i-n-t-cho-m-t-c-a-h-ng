@@ -2,6 +2,10 @@
 
 Ngày cập nhật: 07/10/2026. Triển khai toàn bộ website theo từng bước; bộ phân tích ở docs/README.md là thiết kế mục tiêu.
 
+## Cập nhật — đối chiếu docs và vận chuyển
+
+Đã đối chiếu đủ 34 UC tại [12](12_ECARTS_ET_IMPLEMENTATION.md), bổ sung UC-25/26 chế độ thủ công theo BR-03/09: vận đơn, bằng chứng, handoff, giao lại, nhận hàng về đúng một lần và DELIVERY_FAILED/chờ hoàn tiền. SQLite v9, PostgreSQL v2. PostgreSQL hiện có đã sao lưu custom dump trước migration; nâng cấp giữ nguyên 3 tài khoản và 2 đơn tại thời điểm kiểm tra. 82 bài local và 7 bài PostgreSQL đạt, cả hai smoke đạt. [13](13_SU_DUNG_VAN_CHUYEN.md) hướng dẫn sử dụng; biểu phí địa bàn/trọng lượng, jobs bền và các adapter ngoài còn thiếu theo bảng 12, không coi đã hoàn thành mọi UC/AT.
+
 ## Bước 1 — Danh mục/thương hiệu và nền tảng migration
 
 - Thêm categories, brands và schema_migrations; liên kết products.category_id/brand_id, index và FK.
@@ -317,4 +321,52 @@ Ngày 07/10/2026: `npm.cmd test` đạt 42/42; `npm.cmd run test:smoke` đạt. 
 
 CSDL local vẫn schema v5, integrity_check=ok và không lỗi khóa ngoại. Bước này chỉ bổ sung trạng thái so sánh trong phiên và đọc catalog/giao dịch, không nâng cấp schema. Các sơ đồ Mermaid đã cập nhật nguồn; chưa render/xem ảnh sơ đồ trong môi trường này.
 
-Bước 7 tiếp theo: khuyến mãi và đánh giá sau mua; tiếp đó báo cáo/audit và tích hợp thanh toán/vận chuyển.
+Bước 7 đang triển khai: khuyến mãi và đánh giá sau mua; tiếp đó báo cáo/audit và tích hợp thanh toán/vận chuyển.
+
+## Bước 7 — Hoàn thiện kết nối giao diện khuyến mãi/đánh giá
+
+Cập nhật 07/10/2026: nối template quản trị danh sách/tạo/sửa khuyến mãi và duyệt đánh giá vào layout chính. Checkout có ô áp dụng mã, hiển thị giảm giá và gửi mã đã xác nhận khi đặt đơn; chi tiết đơn hiển thị mã/mức giảm. CUSTOMER có form viết/sửa đánh giá trong đơn DELIVERED.
+
+Sửa test migration v5 để nâng cấp đúng đến v5 thay vì mặc định phiên bản mới nhất. Mở rộng test HTTP: quyền ADMIN/STAFF/CUSTOMER trên các trang mới, tạo mã và đặt đơn giảm giá, giao đơn, chặn người khác đánh giá, chỉ công khai sau duyệt và ẩn lại khi khách sửa.
+
+Bổ sung 10 kiểm thử nghiệp vụ tại `test/promotions.test.js`, `test/reviews.test.js` và `test/promotion-review-migration.test.js`:
+
+- Hai worker/kết nối SQLite tranh lượt mã cuối khi kho đủ cho cả hai: chỉ một đơn và một lượt giữ.
+- Retry không giữ thêm lượt; hủy trả lượt một lần và giữ nguyên snapshot giảm giá; SHIPPING chuyển lượt thành USED.
+- Lỗi lưu lượt hoặc kết quả checkout rollback đơn, dòng đơn, lịch sử, kho và lượt; khóa vẫn dùng được khi thử lại. Lỗi lịch sử hủy giữ nguyên đơn/kho/lượt.
+- Giảm phần trăm đúng phạm vi sản phẩm, trần và giới hạn còn ít nhất 1 VND; kiểm tra tối thiểu, thời hạn và đổi mức giảm sau báo giá.
+- Chỉ chủ dòng đơn đã giao được đánh giá; chặn trường giả, version cũ và tạo trùng. Chỉ ADMIN duyệt, không sửa sao/nội dung thay khách; điểm trung bình chỉ tính đánh giá công khai. Sửa đánh giá cần duyệt lại; lỗi audit rollback gửi/duyệt.
+- Migration v6 giữ dữ liệu đơn/kho/phiên/checkout cũ và chạy lại không thay dữ liệu; lỗi schema rollback bảng/cột mới và dấu phiên bản, có thể nâng cấp lại sau khi sửa nguyên nhân.
+
+Kết quả mới nhất: 52/52 test đạt. Smoke test đã đạt ở lần nối giao diện trước; lần này chỉ bổ sung test và tài liệu, không đổi mã chạy ứng dụng. Chưa kiểm tra giao diện trực quan bằng trình duyệt; bước 7 chưa nghiệm thu đầy đủ.
+
+## Bước 8 — Báo cáo COD và nhật ký quản trị
+
+Cập nhật 07/10/2026. ADMIN có liên kết Báo cáo và Nhật ký tại `/admin`; CUSTOMER, STAFF và khách vãng lai bị chặn tại cả trang và CSV.
+
+- `/admin/reports`: ngày theo Asia/Saigon (UTC+7), mặc định đầu tháng đến hôm nay, giới hạn 366 ngày. Chuyển sang khoảng UTC nửa mở, bao gồm hết ngày cuối.
+- Doanh thu hàng = subtotal − discount của đơn DELIVERED/PAID có lịch sử giao và chứng từ COD; ghi nhận vào ngày mốc muộn hơn giữa giao và chứng từ. Phí giao và giảm giá hiển thị riêng. COD thực thu tính theo ngày chứng từ, kể cả trường hợp trạng thái đơn không còn đủ điều kiện doanh thu hàng.
+- Số đơn mới theo created_at; số đơn giao và top 10 SKU theo mốc giao đầu tiên. Bán chạy theo số lượng, gồm đơn COD chưa thu; giá trị SKU dùng giá snapshot trước giảm. Trạng thái đơn là trạng thái hiện tại của các đơn tạo trong kỳ.
+- Tồn thấp lấy on_hand − reserved hiện tại của SKU đang bán/sản phẩm ACTIVE; ngưỡng cấu hình trong bộ lọc, UI hiển thị 20 dòng đầu, CSV có toàn bộ.
+- `/admin/reports.csv` dùng cùng hàm truy vấn với màn hình; các truy vấn báo cáo chung một read transaction. CSV UTF-8 có BOM, escape dấu nháy/newline và tiền tố ký tự công thức; ghi REPORT_EXPORT khi xuất thành công ở server.
+- `/admin/audit`: lọc thời gian, actor (gồm NULL/hệ thống), action, entity_type/entity_id; phân trang 20 mục theo created_at và id, giữ bộ lọc. JSON trước/sau được che đệ quy theo khóa mật khẩu/secret/token/CSRF/signature/session/cookie/email/điện thoại/địa chỉ; JSON hỏng không hiển thị nguyên văn. Giao diện chỉ đọc, không có route sửa/xóa audit.
+
+Không đổi schema, không suy đoán thời điểm cho đơn legacy đã PAID thiếu lịch sử giao/chứng từ: báo tổng số riêng trên toàn bộ dữ liệu, loại khỏi doanh thu theo kỳ. Chưa có ledger thanh toán online/hoàn tiền nên chưa nghiệm thu toàn bộ UC-32; không báo net cash/lợi nhuận. COD ghi nhận theo thời gian tạo chứng từ, chưa hỗ trợ ngày thực thu nhập hồi tố. Chưa thống kê tài khoản mới vì schema hiện chưa có ngày tạo tài khoản. Nhật ký che theo khóa JSON, không tự phát hiện bí mật trong nội dung ghi chú tự do. Chưa kiểm tra bố cục trực quan bằng trình duyệt.
+
+Kiểm thử: 56/56 test và smoke test đạt. Ca mới kiểm tra biên 00:00 UTC+7, ngày sai/range quá dài, doanh thu khác kỳ thu tiền, đơn hủy/chưa thu/legacy, dữ liệu rỗng, tồn khả dụng, CSV khớp số liệu/escape công thức, nhật ký 105 bản ghi không trùng trang/giữ lọc/che nhạy cảm. Test HTTP kiểm tra render trang, quyền ADMIN/STAFF/CUSTOMER/vãng lai, đặt/giao/thu COD rồi xuất CSV đúng số tiền và tra cứu audit xuất; route xóa audit trả 404.
+
+## Bước 9 — Dịch vụ khách hàng, VNPay sandbox và hoàn tiền
+
+Theo lựa chọn người dùng ngày 07/10/2026: làm toàn bộ nhóm quên mật khẩu/sổ địa chỉ/hỗ trợ rồi thanh toán online sandbox VNPay và ghi nhận hoàn tiền. Đã triển khai migration v7/v8 và nối giao diện; [hướng dẫn cấu hình, cách dùng và giới hạn](10_CAU_HINH_EMAIL_VNPAY.md) ghi chi tiết.
+
+- Reset SMTP: token ngẫu nhiên/hash trong DB, dùng một lần, hạn 30 phút, gắn auth_version; phản hồi chung và rate limit bền trong DB; reset vô hiệu phiên cũ.
+- Sổ tối đa 20 địa chỉ thuộc CUSTOMER, default duy nhất, version; ưu tiên ở checkout, không thay snapshot đơn cũ.
+- Hỗ trợ gắn đơn/chủ ticket, tin public/internal, nhận xử lý và lịch sử; khách mở lại CLOSED trong 7 ngày. Danh sách/hội thoại phân trang 20; khách không thấy tin hoặc lịch sử nội bộ.
+- VNPay PAY 2.1.0 sandbox: URL HMAC SHA-512, IPN xác thực/đúng amount/reference/TmnCode/trạng thái; Return không ghi tiền. Attempt bền trong DB, retry PENDING cùng tham chiếu, failure có thể thử lại trong hạn chung của đơn.
+- Hết hạn 15 phút: worker trong server quét mỗi 30 giây và khi khởi động; hủy/release nguyên tử, actor NULL/source SYSTEM. Success muộn ghi ledger và REFUND_PENDING, không mở đơn/tồn lại; failure không lùi SUCCEEDED; thu dư hiện trong hàng đợi hoàn.
+- ADMIN ghi nhận hoàn toàn bộ từng khoản thu sau khi đã hoàn ngoài hệ thống, bắt buộc mã/bằng chứng/thời điểm/note; unique và transaction chống trùng/vượt tiền. Không tự hoàn qua API, không sửa kho/snapshot.
+- Báo cáo bổ sung ledger VNPay/tiền hoàn, thu trừ hoàn theo kỳ, khoản chờ hoàn toàn bộ dữ liệu và recognition_at. Chuyển chứng từ COD cũ có thật sang ledger; không tạo bằng chứng cho đơn legacy PAID không chứng từ.
+
+Kết quả: 77/77 test và smoke test đạt. Kiểm thử HTTP với SMTP giả và IPN ký bằng khóa kiểm thử; race hai kết nối IPN trùng, success với expiry, hai chứng từ hoàn cùng khoản thu; rollback reset/hỗ trợ/ledger/audit, migration v7/v8 và kỳ thu/hoàn khác nhau. Không ghi dữ liệu test vào DB cửa hàng.
+
+Chưa gửi SMTP thật/chạy merchant VNPay thật/kiểm tra bố cục trực quan bằng trình duyệt. Cần thông tin dịch vụ và domain public để nghiệm thu tích hợp; chưa có hàng đợi email/retry bền, querydr chủ động đối soát khi IPN mất, vận chuyển tích hợp hoặc hoàn tiền một phần. Nguồn API: [VNPay PAY](https://sandbox.vnpayment.vn/apis/docs/thanh-toan-pay/pay.html), [Nodemailer SMTP](https://nodemailer.com/smtp).
