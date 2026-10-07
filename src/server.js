@@ -94,6 +94,14 @@ function flash(req,res,message,url) { req.session.notice=message; res.redirect(u
 function render(res,page,data={}) { res.render('index',{ page,...data }); }
 function textField(value,min,max) { return typeof value === 'string' && value.trim().length >= min && value.trim().length <= max; }
 const attempts = new Map();
+app.post('/chatbot/message',(req,res)=>{
+  res.set('Cache-Control','no-store');
+  const now=Date.now(),limit=req.session.chatLimit;
+  if(limit&&limit.until>now&&limit.count>=20) return res.status(429).json({message:'Bạn đã gửi nhiều câu hỏi. Hãy thử lại sau một phút.'});
+  req.session.chatLimit=limit&&limit.until>now?{...limit,count:limit.count+1}:{count:1,until:now+60000};
+  const result=require('./chatbot').reply(db,req.user,req.body.message);
+  res.status(result.status).json(result);
+});
 app.get('/admin/dashboard',staff,(req,res)=>render(res,'dashboard',require('./dashboard').dashboard(db,req.user)));
 app.get('/favorites',customer,(req,res)=>render(res,'saved-products',{...engagement.favorites(db,req.user,req.query),heading:'Sản phẩm yêu thích',favoriteList:true}));
 app.post('/favorites/:id/:action',customer,(req,res)=>productResult(req,res,engagement.favorite(db,req.user,Number(req.params.id),req.params.action),'/favorites'));

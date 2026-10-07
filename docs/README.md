@@ -1,5 +1,7 @@
 # Bộ tài liệu phân tích và thiết kế Electro Store
 
+[Chatbot hỗ trợ người dùng](16_CHATBOT_HO_TRO.md): bản tự động theo quy tắc, tìm sản phẩm/ngân sách, hướng dẫn và tra cứu đơn chính chủ; không cần API key.
+
 **Mới nhất:** [Dashboard, ảnh, yêu thích/đã xem và thông báo trong website](15_DASHBOARD_ANH_YEU_THICH_THONG_BAO.md). Đã triển khai hướng 3–6: SQLite v10, PostgreSQL v3; 87 ca local và 8 ca PostgreSQL đạt, hai luồng smoke đạt. Các số liệu bên dưới là mốc trước đó.
 
 [Kết quả kiểm tra lại và ý tưởng phát triển ngày 07/10/2026](14_KIEM_TRA_VA_DE_XUAT_PHAT_TRIEN.md): 89 ca đạt khi chạy hai bộ, smoke SQLite/PostgreSQL đạt, dữ liệu hiện có không vi phạm các kiểm tra tồn/đơn/hoàn; ghi rõ phạm vi chưa kiểm tra trực tiếp bằng browser hoặc nhà cung cấp thật.

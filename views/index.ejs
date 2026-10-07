@@ -47,4 +47,4 @@
 <% } else if(page==='notifications') { %><%- include('notifications') %>
 <% } else if(page==='admin') { %><%- include('products-admin') %>
 <% } %>
-</main><% if(managementLayout) { %></div><% } %><footer>Electro Store · Website bán đồ điện tử · Bản phát triển</footer></body></html>
+</main><% if(managementLayout) { %></div><% } %><footer>Electro Store · Website bán đồ điện tử · Bản phát triển</footer><% if(!managementLayout) { %><%- include('chatbot') %><% } %></body></html>

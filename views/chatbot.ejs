@@ -1,0 +1,8 @@
+<button type="button" id="chat-toggle" class="chat-toggle" aria-controls="chat-panel" aria-expanded="false">💬 Hỗ trợ</button>
+<section id="chat-panel" class="chat-panel" hidden aria-label="Trợ lý Electro Store">
+<div class="chat-heading"><strong>Trợ lý Electro Store</strong><button type="button" id="chat-close" class="secondary" aria-label="Đóng trò chuyện">✕</button></div>
+<p class="chat-note">Trả lời tự động theo dữ liệu và quy tắc.</p>
+<div id="chat-messages" class="chat-messages" role="log" aria-live="polite"><p class="chat-bubble">Xin chào! Tôi có thể tìm sản phẩm, hướng dẫn đặt hàng và tra cứu đơn của bạn.</p></div>
+<div class="chat-suggestions"><button type="button" data-chat-question="Laptop dưới 25 triệu">Tìm laptop</button><button type="button" data-chat-question="Đơn hàng của tôi">Tra cứu đơn</button><button type="button" data-chat-question="Liên hệ nhân viên hỗ trợ">Gặp nhân viên</button></div>
+<form id="chat-form"><input type="hidden" name="_csrf" value="<%= csrf %>"><label for="chat-input">Câu hỏi của bạn</label><div class="chat-input-row"><input id="chat-input" name="message" maxlength="500" placeholder="Ví dụ: iPhone dưới 25 triệu" required autocomplete="off"><button type="submit">Gửi</button></div><p id="chat-status" role="status"></p></form>
+</section><script src="/chatbot.js" defer></script>

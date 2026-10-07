@@ -42,6 +42,9 @@ async function refresh(identity) {
       child.stdout.on('data',chunk=>{if(String(chunk).includes('Electro Store:')){clearTimeout(timer);resolve();}});
     });
     const customer=await session();
+    const chatbotResponse=await request('/chatbot/message',{method:'POST',headers:{cookie:customer.cookie,'content-type':'application/json'},body:JSON.stringify({_csrf:customer.csrf,message:'laptop dưới 25 triệu'})});
+    assert.equal(chatbotResponse.status,200);assert.ok((await chatbotResponse.json()).links.some(link=>link.url==='/products/3'));
+    assert.equal((await request('/chatbot/message',{method:'POST',headers:{cookie:customer.cookie,'content-type':'application/json'},body:JSON.stringify({message:'đơn hàng của tôi'})})).status,403);
     await request('/products/2',{headers:{cookie:customer.cookie}});
     const email=`smoke-${randomBytes(6).toString('hex')}@example.com`,password=randomBytes(16).toString('hex');
     assert.equal((await post('/register',customer,{name:'Khách kiểm thử',email,password})).status,302);
@@ -68,6 +71,8 @@ async function refresh(identity) {
     const orderUrl=order.headers.get('location');
     assert.match(orderUrl,/^\/orders\/\d+$/);
     assert.equal((await request(orderUrl,{headers:{cookie:customer.cookie}})).status,200);
+    const chatOrder=await request('/chatbot/message',{method:'POST',headers:{cookie:customer.cookie,'content-type':'application/json'},body:JSON.stringify({_csrf:customer.csrf,message:'trạng thái đơn #'+orderUrl.split('/').at(-1)})});
+    assert.equal(chatOrder.status,200);assert.equal((await chatOrder.json()).links[0].url,orderUrl);
     const repeated=await post('/checkout',customer,{token,recipient:'Khách kiểm thử',phone:'0901234567',address:'123 Đường kiểm thử, TP HCM'});
     assert.equal(repeated.headers.get('location'),order.headers.get('location'));
     const other=await session();
@@ -75,6 +80,9 @@ async function refresh(identity) {
     await post('/register',other,{name:'Khách khác',email:otherEmail,password});
     const otherLogin=await post('/login',other,{email:otherEmail,password});
     other.cookie=otherLogin.headers.get('set-cookie').split(';')[0];
+    await refresh(other);
+    const chatOther=await request('/chatbot/message',{method:'POST',headers:{cookie:other.cookie,'content-type':'application/json'},body:JSON.stringify({_csrf:other.csrf,message:'trạng thái đơn #'+orderUrl.split('/').at(-1)})});
+    assert.equal(chatOther.status,200);assert.ok((await chatOther.json()).links.every(link=>link.url!==orderUrl));
     assert.equal((await request(orderUrl,{headers:{cookie:other.cookie}})).status,404);
     const admin=await session();
     const adminLogin=await post('/login',admin,{email:'smoke-admin@example.com',password:adminPassword});
