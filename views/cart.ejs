@@ -1,9 +1,11 @@
 <h1>Giỏ hàng</h1>
+<p class="configuration-help"><%= user?'Giỏ được lưu theo tài khoản của bạn.':'Bạn có thể chọn hàng trước và đăng nhập khi đặt hàng.' %> Sản phẩm trong giỏ chưa được giữ kho.</p>
 <% if(!items.length) { %>
-  <p>Giỏ hàng đang trống.</p><a class="button" href="/">Khám phá sản phẩm</a>
+  <section class="empty-state"><h2>Giỏ hàng đang trống</h2><p>Chọn thiết bị và cấu hình phù hợp để bắt đầu.</p><a class="button" href="/">Khám phá sản phẩm</a></section>
 <% } else { %>
+  <div class="cart-layout"><section class="cart-lines" aria-label="Sản phẩm trong giỏ">
   <% items.forEach(item=>{ %>
-    <article class="row panel"><div>
+    <article class="panel cart-line"><div class="cart-line-info">
       <h2><%= item.name %></h2><p><%= item.sku %></p><p><%= item.color %> <%= item.configuration %></p>
       <% if(item.unitPrice===null) { %><p>Sản phẩm không còn bán. Bạn có thể xóa khỏi giỏ.</p>
       <% } else { %><p><%= money(item.price) %> · Còn <%= item.stock %></p><% } %>
@@ -13,8 +15,10 @@
     <form method="post" action="/cart"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="id" value="<%= item.id %>">
       <% if(cartVersion!==null) { %><input type="hidden" name="cart_version" value="<%= cartVersion %>"><% } %>
       <label>Số lượng (0 để xóa)<input type="number" name="quantity" min="0" max="99" value="<%= item.quantity %>" required></label><button>Cập nhật</button>
-    </form><strong><%= money(item.price*item.quantity) %></strong></article>
+    </form><div class="cart-line-total"><small>Thành tiền</small><strong><%= item.unitPrice===null?'Chưa xác định':money(item.price*item.quantity) %></strong></div>
+    <form method="post" action="/cart" class="cart-remove"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="id" value="<%= item.id %>"><input type="hidden" name="quantity" value="0"><% if(cartVersion!==null) { %><input type="hidden" name="cart_version" value="<%= cartVersion %>"><% } %><button class="secondary" aria-label="Xóa <%= item.name %> khỏi giỏ">Xóa khỏi giỏ</button></form></article>
   <% }) %>
-  <h2>Tổng tạm tính: <%= money(total) %></h2><p>Giá và tồn kho được kiểm tra lại khi đặt hàng.</p>
-  <a class="button" href="/checkout">Tiến hành đặt hàng</a>
+  </section><aside class="panel cart-summary" aria-labelledby="cart-summary-heading"><h2 id="cart-summary-heading">Tóm tắt giỏ hàng</h2><p><%= items.length %> cấu hình · <%= items.reduce((sum,item)=>sum+item.quantity,0) %> sản phẩm</p><div class="cart-summary-amount"><span>Tổng tạm tính</span><strong><%= money(total) %></strong></div><p class="configuration-help">Chưa áp dụng mã giảm giá và phí giao hàng. Tổng thanh toán sẽ hiển thị trước khi bạn xác nhận đặt đơn.</p>
+  <% if(canCheckout) { %><a class="button" href="/checkout"><%= user?'Tiến hành đặt hàng':'Đăng nhập để đặt hàng' %></a><% } else { %><p class="cart-warning" role="status">Có sản phẩm cần điều chỉnh hoặc không còn bán. Hãy cập nhật số lượng hay xóa sản phẩm đó trước khi đặt.</p><button disabled>Chưa thể đặt hàng</button><% } %>
+  <p class="configuration-help">Giá và tồn kho được kiểm tra lại khi đặt hàng.</p><a href="/">← Tiếp tục mua sắm</a></aside></div>
 <% } %>

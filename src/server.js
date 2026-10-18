@@ -353,7 +353,7 @@ function cartItems(req) {
     return product ? { ...product,quantity } : null;
   }).filter(Boolean);
 }
-app.get('/cart',cartAccess,(req,res) => { const items=cartItems(req); render(res,'cart',{items,total:items.reduce((sum,item)=>sum+item.price*item.quantity,0)}); });
+app.get('/cart',cartAccess,(req,res) => { const items=cartItems(req); render(res,'cart',{items,canCheckout:req.accountCart?.canCheckout??(items.length>0&&items.every(item=>item.active&&item.product_status==='ACTIVE'&&item.price>0&&item.quantity<=item.stock&&item.quantity<=99)),total:items.reduce((sum,item)=>sum+item.price*item.quantity,0)}); });
 app.post('/cart',cartAccess,(req,res) => {
   if(req.accountCart) {
     const result=accountCart.updateCart(db,req.user,{...req.body,variant_id:req.body.id,version:req.body.cart_version??req.accountCart.version});
