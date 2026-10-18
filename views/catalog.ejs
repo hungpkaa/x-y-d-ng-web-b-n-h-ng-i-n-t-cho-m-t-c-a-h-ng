@@ -1,0 +1,18 @@
+<% const hasFilters=Boolean(q||category||brand||min||max); %>
+<% if(!hasFilters&&paging.page===1) { %>
+<section class="hero"><div><p>KHÁM PHÁ · LỰA CHỌN · KẾT NỐI</p><h1><%= store.title %></h1><p><%= store.subtitle %></p><a class="button hero-button" href="#catalog-products">Khám phá sản phẩm →</a></div><div class="hero-visual" aria-hidden="true"><div class="hero-device">E<span>Electro Store</span></div><span class="hero-orbit">Công nghệ<br>trong tầm tay</span></div></section>
+<div class="benefit-grid"><div><strong>Chọn đúng thiết bị</strong><span>Thông số và cấu hình rõ ràng</span></div><div><strong>So sánh dễ dàng</strong><span>Tối đa 3 cấu hình cùng danh mục</span></div><div><strong>Theo dõi đơn hàng</strong><span>Xem tiến trình trong tài khoản</span></div></div>
+<% } %>
+<section id="catalog-products" aria-labelledby="catalog-heading">
+  <div class="section-heading"><div><small>THIẾT BỊ DÀNH CHO BẠN</small><h1 id="catalog-heading"><%= hasFilters?'Kết quả tìm sản phẩm':'Khám phá sản phẩm' %></h1></div><span><%= paging.total %> sản phẩm</span></div>
+  <details class="catalog-filter-panel" open><summary>Tìm kiếm và bộ lọc</summary><%- include('product-filters',{management:false}) %></details>
+  <% if(hasFilters) { %><div class="active-filters" aria-label="Bộ lọc đang áp dụng"><% [q?'Từ khóa: '+q:'',category?'Danh mục: '+category:'',brand?'Thương hiệu: '+brand:'',min?'Từ '+money(Number(min)):'',max?'Đến '+money(Number(max)):''].filter(Boolean).forEach(f=>{ %><span><%= f %></span><% }) %><a href="/#catalog-products">Xóa bộ lọc</a></div><% } %>
+  <% if(products.length) { %>
+  <p class="catalog-result-summary">Hiển thị <%= paging.offset+1 %>–<%= paging.offset+products.length %> trên <%= paging.total %> sản phẩm · Trang <%= paging.page %>/<%= paging.pages %></p>
+  <div class="grid catalog-grid"><% products.forEach(p=>{ %><%- include('product-card',{p}) %><% }) %></div>
+  <% } else { %>
+  <div class="empty-state"><h2>Chưa tìm thấy sản phẩm phù hợp</h2><p>Thử từ khóa khác hoặc mở rộng khoảng giá để xem thêm sản phẩm.</p><a class="button secondary" href="/#catalog-products">Xem tất cả sản phẩm</a></div>
+  <% } %>
+</section>
+<%- include('pagination') %>
+<%- include('recommendation-cards') %>

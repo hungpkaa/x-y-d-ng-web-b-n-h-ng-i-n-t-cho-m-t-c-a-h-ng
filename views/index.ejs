@@ -4,14 +4,7 @@
 <% if(managementLayout) { %><div class="admin-layout"><%- include('admin-sidebar') %><% } %>
 <main id="main-content"><% if(notice) { %><p class="notice" role="status"><%= notice %></p><% } %>
 <% if(page === 'catalog') { %>
-<section class="hero"><div><p>KH?M PH? ? L?A CH?N ? K?T N?I</p><h1><%= store.title %></h1><p><%= store.subtitle %></p><a class="button hero-button" href="#catalog-products">Kh?m ph? s?n ph?m ?</a></div><div class="hero-visual" aria-hidden="true"><div class="hero-device">E<span>Electro Store</span></div><span class="hero-orbit">C?ng ngh?<br>trong t?m tay</span></div></section>
-<div class="benefit-grid"><div><strong>Ch?n ??ng thi?t b?</strong><span>Th?ng s? v? c?u h?nh r? r?ng</span></div><div><strong>So s?nh d? d?ng</strong><span>T?i ?a 3 c?u h?nh c?ng danh m?c</span></div><div><strong>Theo d?i ??n h?ng</strong><span>L?ch s? x? l? minh b?ch</span></div></div>
-<section id="catalog-products"><div class="section-heading"><div><small>THI?T B? D?NH CHO B?N</small><h2>Kh?m ph? s?n ph?m</h2></div><span><%= paging.total %> s?n ph?m</span></div>
-<details class="catalog-filter-panel" open><summary>B? l?c s?n ph?m</summary><%- include('product-filters',{management:false}) %></details>
-<div class="active-filters"><% [q,category,brand,min?'T? '+money(Number(min)):'',max?'??n '+money(Number(max)):''].filter(Boolean).forEach(f=>{ %><span><%= f %></span><% }) %><% if(q||category||brand||min||max) { %><a href="/">X?a b? l?c</a><% } %></div>
-<div class="grid catalog-grid"><% products.forEach(p=>{ %><%- include('product-card',{p}) %><% }) %></div><% if(!products.length) { %><div class="empty-state"><h3>Ch?a t?m th?y s?n ph?m ph? h?p</h3><p>Th? ??i t? kh?a ho?c gi?m s? b? l?c.</p><a class="button secondary" href="/">Xem t?t c? s?n ph?m</a></div><% } %></section>
-<%- include('pagination') %>
-<%- include('recommendation-cards') %>
+<%- include('catalog') %>
 <% } else if(page === 'product') { %>
 <%- include('product-skus') %>
 <% } else if(page === 'login' || page === 'register') { %>
