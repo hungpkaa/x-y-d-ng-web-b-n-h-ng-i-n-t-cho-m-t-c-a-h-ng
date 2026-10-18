@@ -1,5 +1,9 @@
 # Bộ tài liệu phân tích và thiết kế Electro Store
 
+## Bổ sung QR ngân hàng — 18/10/2026
+
+[Đặc tả chuyển khoản QR ngân hàng](46_BO_SUNG_THANH_TOAN_QR_NGAN_HANG.md): đã đồng ý bổ sung, nhận ảnh QR, tài khoản BIDV và thời hạn chờ xác nhận 30 phút từ tạo đơn. Chưa đối chiếu payload QR, triển khai hoặc bật phương thức cho khách. Gmail tạm hoãn.
+
 ## CODE-07B — Gmail SMTP ngày 18/10/2026
 
 [Hướng dẫn Gmail SMTP](45_CODE_07B_GMAIL_SMTP.md): người dùng chọn Gmail; đồng bộ kiểm tra cặp USER/PASS giữa ứng dụng và preflight, bổ sung test adapter gửi giả. Toàn bộ mới nhất: **136 ca, 126 đạt, 0 lỗi, 10 bỏ qua PostgreSQL**. Chưa đọc/ghi .env hoặc gửi thư thực tế. Bước tiếp theo phụ thuộc người dùng tự điền cấu hình Gmail cục bộ.

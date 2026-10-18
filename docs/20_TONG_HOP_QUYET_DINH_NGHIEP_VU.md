@@ -1,5 +1,7 @@
 # Tổng hợp quyết định nghiệp vụ
 
+Bổ sung 18/10/2026: người dùng đồng ý thêm chuyển khoản QR ngân hàng cá nhân, ADMIN đối soát trước PAID; thời hạn 30 phút từ tạo đơn. Tài khoản do người dùng cung cấp: BIDV / 4801021854 / VUTIENHUNG. Xem [đặc tả bổ sung](46_BO_SUNG_THANH_TOAN_QR_NGAN_HANG.md). Chưa đối chiếu payload QR; không áp dụng giới hạn COD/VNPay của QD-16 để loại bỏ phương thức mới đã đồng ý.
+
 Ngày tổng hợp: 14/10/2026. Căn cứ: các phương án được trình bày và người dùng đồng ý trong cuộc trao đổi. Đây là yêu cầu mục tiêu, không phải biên bản nghiệm thu mã nguồn.
 
 ## 1. Các quyết định đã thống nhất

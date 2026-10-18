@@ -19,10 +19,11 @@ function issueCheckout(db,userId,cart,code='',method='COD') {
   const snapshot=quote(db,cart),token=randomBytes(24).toString('hex');
   const promotion=promotionQuote(db,userId,snapshot,code);
   const fee=shippingPolicy(db).fee;
-  if(!['COD','ONLINE'].includes(method)) throw new Error('Phương thức thanh toán không hợp lệ.');
+  if(!['COD','ONLINE','BANK_TRANSFER'].includes(method)) throw new Error('Phương thức thanh toán không hợp lệ.');
   if(method==='ONLINE'&&snapshot.reduce((sum,[,q,price])=>sum+q*price,0)-promotion.discount+fee>9999999999) throw new Error('Tổng tiền vượt giới hạn VNPay sandbox.');
   db.prepare('DELETE FROM checkout_requests WHERE order_id IS NULL AND expires_at<=?').run(Date.now());
   db.prepare('INSERT INTO checkout_requests(user_id,request_key,quote_json,expires_at,shipping_fee,promotion_id,promotion_code,discount,payment_method,shipping_quote_json) VALUES(?,?,?,?,?,?,?,?,?,?)').run(userId,token,JSON.stringify(snapshot),Date.now()+900000,fee,promotion.id,promotion.code,promotion.discount,method,null);
+  if(method==='BANK_TRANSFER') db.prepare('UPDATE checkout_requests SET bank_receiver_json=? WHERE request_key=?').run(JSON.stringify(require('./bank-receiver')),token);
   return token;
 }
 function submitCheckout(db,userId,token,cart,recipient,phone,address,rawCode='',method='COD',ip='127.0.0.1') {
@@ -33,7 +34,7 @@ function submitCheckoutWork(db,userId,token,cart,recipient,phone,address,rawCode
     const request=db.prepare('SELECT * FROM checkout_requests WHERE user_id=? AND request_key=?').get(userId,String(token||''));
     if(!request) throw new Error('Yêu cầu đặt hàng không hợp lệ. Hãy mở lại trang thanh toán.');
     const code=normalizeCode(rawCode);
-    if(!['COD','ONLINE'].includes(method)||method!==request.payment_method) throw new Error('Phương thức đã thay đổi. Hãy xác nhận báo giá mới.');
+    if(!['COD','ONLINE','BANK_TRANSFER'].includes(method)||method!==request.payment_method) throw new Error('Phương thức đã thay đổi. Hãy xác nhận báo giá mới.');
     const hash=digest(code?[recipient,phone,address,method,code]:[recipient,phone,address,method]);
     if(request.order_id!==null) {
       if(hash!==request.payload_hash) throw new Error('Thông tin giao hàng đã thay đổi. Hãy tạo yêu cầu thanh toán mới.');
@@ -52,6 +53,7 @@ function submitCheckoutWork(db,userId,token,cart,recipient,phone,address,rawCode
       db.prepare("UPDATE orders SET payment_method='ONLINE' WHERE id=?").run(id);
       require('./payments').createOnlineWork(db,id,ip);
     }
+    if(method==='BANK_TRANSFER') require('./bank-transfer').prepareBankTransferWork(db,{id:userId},id,JSON.parse(request.bank_receiver_json));
     if(promotion.id!==null) db.prepare("INSERT INTO promotion_redemptions(promotion_id,user_id,order_id,amount,status) VALUES(?,?,?,?,'HELD')").run(promotion.id,userId,id,promotion.discount);
     db.prepare('UPDATE checkout_requests SET order_id=?,payload_hash=? WHERE id=?').run(id,hash,request.id);
     return {id,replayed:false};

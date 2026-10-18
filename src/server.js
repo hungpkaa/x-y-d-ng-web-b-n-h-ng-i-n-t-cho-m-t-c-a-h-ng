@@ -25,6 +25,7 @@ const {salesReport,reportCsv,auditRecords,localDateTime}=require('./reporting');
 const customerServices=require('./customer-services');
 const payments=require('./payments');
 const shipments=require('./shipments');
+const bankTransfers=require('./bank-transfer');
 const engagement=require('./engagement');
 const engagementEnabled=()=>engagement.enabled(db);
 const mailer=require('./mail').createMailer();
@@ -381,6 +382,12 @@ app.post('/cart',cartAccess,(req,res) => {
   req.session.cartSourceKey=randomBytes(32).toString('hex');
   flash(req,res,'Đã cập nhật giỏ hàng.','/cart');
 });
+app.post('/checkout/options',customer,(req,res)=>{
+  if(Object.hasOwn(req.body,'recipient')) req.session.checkoutDraft={recipient:String(req.body.recipient||'').slice(0,80),phone:String(req.body.phone||'').slice(0,20),address:String(req.body.delivery_address||'').slice(0,300)};
+  const query=new URLSearchParams({method:String(req.body.method||'COD'),code:String(req.body.code||'')});
+  if(req.body.address) query.set('address',String(req.body.address));
+  res.redirect('/checkout?'+query.toString());
+});
 app.get('/checkout',customer,(req,res) => {
   const items=cartItems(req);
   if (!items.length) return res.redirect('/cart');
@@ -399,7 +406,7 @@ app.get('/checkout',customer,(req,res) => {
   const subtotal=items.reduce((sum,item)=>sum+item.price*item.quantity,0);
   const shippingFee=db.prepare('SELECT shipping_fee FROM checkout_requests WHERE user_id=? AND request_key=?').get(req.user.id,req.session.checkoutToken).shipping_fee;
   const promotion=db.prepare('SELECT promotion_code AS code,discount FROM checkout_requests WHERE user_id=? AND request_key=?').get(req.user.id,req.session.checkoutToken);
-  render(res,'checkout',{items,subtotal,shippingFee,discount:promotion.discount,promotionCode:promotion.code,total:subtotal-promotion.discount+shippingFee,token:req.session.checkoutToken,method,onlineAvailable:Boolean(paymentConfig),addressBook,selectedAddress,checkoutDraft:req.session.checkoutDraft||{}});
+  render(res,'checkout',{items,subtotal,shippingFee,discount:promotion.discount,promotionCode:promotion.code,total:subtotal-promotion.discount+shippingFee,token:req.session.checkoutToken,method,onlineAvailable:Boolean(paymentConfig),addressBook,selectedAddress,bankReceiver:require('./bank-receiver'),bankQrAvailable:require('node:fs').existsSync(path.join(__dirname,'../public/images/payments/bidv-4801021854.png')),checkoutDraft:req.session.checkoutDraft||{}});
 });
 app.post('/checkout',customer,(req,res) => {
   const {recipient,phone,address}=req.body;
@@ -413,7 +420,7 @@ app.post('/checkout',customer,(req,res) => {
     delete req.session.checkoutToken;
     delete req.session.checkoutDraft;
     if(!replayed) req.session.cart={};
-    flash(req,res,`Đơn #${id}: ${req.body.method==='ONLINE'?'Chờ thanh toán VNPay trong 15 phút.':'Thanh toán khi nhận hàng.'}`, `/orders/${id}`);
+    flash(req,res,`Đơn #${id}: ${req.body.method==='ONLINE'?'Chờ thanh toán VNPay trong 15 phút.':req.body.method==='BANK_TRANSFER'?'Chờ xác nhận chuyển khoản trong 30 phút.':'Thanh toán khi nhận hàng.'}`, `/orders/${id}`);
   } catch(error) { flash(req,res,error.message,'/checkout'); }
 });
 app.get('/orders',customer,(req,res)=>{
@@ -421,10 +428,18 @@ app.get('/orders',customer,(req,res)=>{
   if(listing.status!==200) return res.status(listing.status).send(listing.message);
   render(res,'orders',{...listing,orders:listing.rows,management:false});
 });
+app.get('/orders/:id/invoice',auth,(req,res)=>{
+  const id=Number(req.params.id);
+  if(!Number.isSafeInteger(id)||id<1) return res.status(404).send('Không tìm thấy đơn.');
+  const order=db.prepare('SELECT * FROM orders WHERE id=?').get(id);
+  if(!order||(req.user.role==='CUSTOMER'&&order.user_id!==req.user.id)) return res.status(404).send('Không tìm thấy đơn.');
+  res.set('Cache-Control','no-store');
+  render(res,'invoice',{order,items:db.prepare('SELECT * FROM order_items WHERE order_id=? ORDER BY id').all(id)});
+});
 app.get('/orders/:id',auth,(req,res) => {
   const order=db.prepare('SELECT * FROM orders WHERE id=?').get(Number(req.params.id));
   if (!order || (order.user_id !== req.user.id && req.user.role === 'CUSTOMER')) return res.status(404).send('Không tìm thấy đơn.');
-  render(res,'order',{order,shipping:shipments.detail(db,req.user,order.id),shipmentLabels:shipments.labels,shipmentTransitions:shipments.transitions,shipmentRequestKey:randomBytes(16).toString('hex'),items:db.prepare('SELECT * FROM order_items WHERE order_id=?').all(order.id),orderReviews:orderReviews(db,order.id),refunds:db.prepare('SELECT amount,occurred_at FROM refunds WHERE order_id=? ORDER BY id').all(order.id),onlineAvailable:Boolean(paymentConfig),history:db.prepare('SELECT h.*,u.name AS actor_name,u.role AS actor_role FROM order_history h LEFT JOIN users u ON u.id=h.actor_id WHERE h.order_id=? ORDER BY h.id').all(order.id),receipt:req.user.role==='ADMIN'?db.prepare('SELECT reference,amount,note,created_at FROM cod_receipts WHERE order_id=?').get(order.id):null});
+  render(res,'order',{order,bankTransfer:db.prepare('SELECT * FROM bank_transfer_orders WHERE order_id=?').get(order.id),bankQrAvailable:require('node:fs').existsSync(path.join(__dirname,'../public/images/payments/bidv-4801021854.png')),shipping:shipments.detail(db,req.user,order.id),shipmentLabels:shipments.labels,shipmentTransitions:shipments.transitions,shipmentRequestKey:randomBytes(16).toString('hex'),items:db.prepare('SELECT * FROM order_items WHERE order_id=?').all(order.id),orderReviews:orderReviews(db,order.id),refunds:db.prepare('SELECT amount,occurred_at FROM refunds WHERE order_id=? ORDER BY id').all(order.id),onlineAvailable:Boolean(paymentConfig),history:db.prepare('SELECT h.*,u.name AS actor_name,u.role AS actor_role FROM order_history h LEFT JOIN users u ON u.id=h.actor_id WHERE h.order_id=? ORDER BY h.id').all(order.id),receipt:req.user.role==='ADMIN'?db.prepare('SELECT reference,amount,note,created_at FROM cod_receipts WHERE order_id=?').get(order.id):null});
 });
 app.get('/admin/shipments',staff,(req,res)=>{
   const result=shipments.list(db,req.user,req.query);
@@ -497,6 +512,7 @@ app.post('/admin/orders/:id/status',staff,(req,res) => {
   try { productResult(req,res,transitionOrder(db,Number(req.params.id),req.body.status,req.user,req.body),`/orders/${req.params.id}`); }
   catch(error) { flash(req,res,error.message,'/admin/orders'); }
 });
+app.post('/admin/orders/:id/bank-transfer',admin,(req,res)=>productResult(req,res,bankTransfers.confirmBankTransfer(db,req.user,Number(req.params.id),req.body),`/orders/${req.params.id}`));
 app.post('/admin/orders/:id/cod',admin,(req,res)=>productResult(req,res,recordCodReceipt(db,Number(req.params.id),req.user,req.body),`/orders/${req.params.id}`));
 app.post('/admin/products',staff,(req,res) => {
   const result = saveProduct(db,req.user,req.body);
@@ -521,7 +537,8 @@ app.post('/admin/jobs/:id/retry',admin,(req,res)=>{
 app.use((req,res) => res.status(404).send('Trang không tồn tại.'));
 app.use((error,req,res,next) => { if(error.type==='entity.too.large') return res.status(413).send('Dữ liệu gửi lên quá lớn. Ảnh tối đa 5MB.'); console.error(JSON.stringify({level:'error',requestId:req.requestId,event:'request_failed',method:req.method,route:typeof req.route?.path==='string'?req.route.path:'unmatched',query:error.queryContext,code:error.code||'INTERNAL'})); res.status(500).send('Có lỗi xử lý. Vui lòng thử lại.'); });
 payments.expirePayments(db);
-const expiryTimer=setInterval(()=>{try {payments.expirePayments(db);} catch {console.error('Payment expiry transaction failed');}},30000);
+bankTransfers.expireBankTransfers(db);
+const expiryTimer=setInterval(()=>{try {payments.expirePayments(db);bankTransfers.expireBankTransfers(db);} catch {console.error('Payment expiry transaction failed');}},30000);
 expiryTimer.unref();
 if(engagementEnabled()) {
   engagement.scan(db);

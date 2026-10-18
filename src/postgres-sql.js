@@ -18,7 +18,7 @@ function translate(sql) {
     .replace(/\binstr\s*\(/g,'strpos(')
     .replace(/\bCURRENT_TIMESTAMP\b/g,"to_char(CURRENT_TIMESTAMP AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS')")
     // Preserve the camelCase column aliases used by the report view.
-    .replace(/\b(?:newOrders|deliveredOrders|recognizedOrders|onlineCash)\b/g,name=>`"${name}"`)
+    .replace(/\b(?:newOrders|deliveredOrders|recognizedOrders|onlineCash|bankCash)\b/g,name=>`"${name}"`)
   ).join('');
 }
 module.exports={translate};

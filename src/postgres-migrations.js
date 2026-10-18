@@ -11,7 +11,7 @@ function migratePostgres(db) {
       db.query(readFileSync(join(__dirname,'postgres-schema.sql'),'utf8'));
     } else {
       const versions=db.prepare('SELECT version FROM postgres_migrations ORDER BY version').all();
-      if(!versions.length||versions.some((row,index)=>row.version!==index+1)||versions.at(-1).version>6) throw new Error('Phiên bản PostgreSQL schema không được hỗ trợ.');
+      if(!versions.length||versions.some((row,index)=>row.version!==index+1)||versions.at(-1).version>9) throw new Error('Phiên bản PostgreSQL schema không được hỗ trợ.');
     }
     if(!db.prepare('SELECT version FROM postgres_migrations WHERE version=2').get()) {
       require('./shipments-migration').migrateShipments({exec(sql){db.query(sql
@@ -42,6 +42,18 @@ function migratePostgres(db) {
     if(!db.prepare('SELECT version FROM postgres_migrations WHERE version=6').get()) {
       db.query(require('./cart-merge-migration').cartMergeSchema('postgres'));
       db.prepare('INSERT INTO postgres_migrations(version) VALUES(6)').run();
+    }
+    if(!db.prepare('SELECT version FROM postgres_migrations WHERE version=7').get()) {
+      db.query(require('./bank-transfer-migration').bankTransferSchema('postgres'));
+      db.prepare('INSERT INTO postgres_migrations(version) VALUES(7)').run();
+    }
+    if(!db.prepare('SELECT version FROM postgres_migrations WHERE version=8').get()) {
+      db.query(require('./bank-ledger-migration').postgresBankLedger);
+      db.prepare('INSERT INTO postgres_migrations(version) VALUES(8)').run();
+    }
+    if(!db.prepare('SELECT version FROM postgres_migrations WHERE version=9').get()) {
+      db.query(require('./bank-checkout-migration').postgresBankCheckout);
+      db.prepare('INSERT INTO postgres_migrations(version) VALUES(9)').run();
     }
     db.exec('COMMIT');
     db.ids=new Set(db.prepare("SELECT table_name FROM information_schema.columns WHERE table_schema=current_schema() AND column_name='id'").all().map(row=>row.table_name));

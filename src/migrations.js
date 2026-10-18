@@ -40,6 +40,9 @@ CREATE INDEX checkout_expiry_idx ON checkout_requests(expires_at) WHERE order_id
 `)},{version:5,name:'accounts_order_management',up:require('./account-order-migration').migrateAccountsOrders},{version:6,name:'promotions_verified_reviews',up:require('./promotion-review-migration').migratePromotionsReviews},{version:7,name:'customer_services',up:require('./customer-services-migration').migrateCustomerServices},{version:8,name:'payments_refunds',up:require('./payments-migration').migratePayments},{version:9,name:'manual_shipments',up:require('./shipments-migration').migrateShipments},{version:10,name:'favorites_notifications',up:require('./engagement-migration').migrateEngagement},{version:11,name:'completion_foundation',up:require('./completion-migration').migrateCompletion}];
 migrations.push({version:12,name:'account_carts',up:require('./account-cart-migration').migrateAccountCart});
 migrations.push({version:13,name:'cart_merge_sources',up:require('./cart-merge-migration').migrateCartMerges});
+migrations.push({version:14,name:'bank_transfer_foundation',up:require('./bank-transfer-migration').migrateBankTransfer});
+migrations.push({version:15,name:'bank_transfer_ledger',up:require('./bank-ledger-migration').migrateBankLedger});
+migrations.push({version:16,name:'bank_transfer_checkout',up:require('./bank-checkout-migration').migrateBankCheckout});
 const CURRENT_SCHEMA_VERSION = migrations.at(-1).version;
 function migrate(db, file = ':memory:', targetVersion = CURRENT_SCHEMA_VERSION) {
   const hasVersions = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='schema_migrations'").get();
@@ -53,6 +56,8 @@ function migrate(db, file = ':memory:', targetVersion = CURRENT_SCHEMA_VERSION) 
     db.prepare('VACUUM INTO ?').run(backup);
     console.log(`Đã sao lưu CSDL trước nâng cấp: ${backup}`);
   }
+  const rebuildPayments=pending.some(item=>[15,16].includes(item.version));
+  if(rebuildPayments) db.exec('PRAGMA foreign_keys=OFF');
   db.exec('BEGIN IMMEDIATE');
   try {
     db.exec('CREATE TABLE IF NOT EXISTS schema_migrations(version INTEGER PRIMARY KEY,name TEXT NOT NULL,applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)');
@@ -60,7 +65,9 @@ function migrate(db, file = ':memory:', targetVersion = CURRENT_SCHEMA_VERSION) 
       item.up(db);
       db.prepare('INSERT INTO schema_migrations(version,name) VALUES(?,?)').run(item.version,item.name);
     }
+    if(rebuildPayments&&db.prepare('PRAGMA foreign_key_check').all().length) throw new Error('Foreign key check failed after bank ledger migration');
     db.exec('COMMIT');
   } catch(error) { db.exec('ROLLBACK'); throw error; }
+  finally {if(rebuildPayments) db.exec('PRAGMA foreign_keys=ON');}
 }
 module.exports = { migrate, CURRENT_SCHEMA_VERSION };

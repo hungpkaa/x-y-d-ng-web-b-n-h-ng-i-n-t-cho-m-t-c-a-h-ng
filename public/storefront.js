@@ -1,4 +1,17 @@
 'use strict';
+document.querySelector('[data-print-invoice]')?.addEventListener('click',()=>window.print());
+const checkoutOptions=document.querySelector('[data-checkout-options]');
+if(checkoutOptions) {
+  checkoutOptions.addEventListener('submit',()=>{
+    const delivery=document.getElementById('place-order-form');
+    for(const [source,target] of [['recipient','recipient'],['phone','phone'],['address','delivery_address']]) {
+      let input=checkoutOptions.querySelector('input[name="'+target+'"]');
+      if(!input){input=document.createElement('input');input.type='hidden';input.name=target;checkoutOptions.append(input);}
+      input.value=delivery?.elements[source]?.value||'';
+    }
+  });
+  checkoutOptions.elements.method.addEventListener('change',()=>checkoutOptions.requestSubmit());
+}
 
 document.querySelectorAll('[data-password-toggle]').forEach(button=>{
   const input=document.getElementById(button.getAttribute('aria-controls'));

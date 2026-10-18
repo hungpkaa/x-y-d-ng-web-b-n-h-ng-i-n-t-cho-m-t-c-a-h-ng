@@ -1,4 +1,5 @@
 <h1>Báo cáo cửa hàng</h1>
+<section class="panel"><h2>Chuyển khoản ngân hàng thực thu</h2><strong class="price"><%= money(report.summary.bankCash) %></strong><p>Theo chứng từ ADMIN đã đối soát, tách riêng COD và VNPay.</p></section>
 <a href="/admin">← Quản lý</a>
 <form method="get" action="/admin/reports" class="filters">
 <label>Từ ngày<input type="date" name="from" value="<%= report.filters.from %>" required></label>
@@ -20,8 +21,8 @@
 <p>Tiền chờ hoàn hiện tại trên toàn bộ dữ liệu: <%= money(report.pendingRefunds) %>. VNPay đang ở sandbox: số tiền thử nghiệm phải được tách khỏi dữ liệu bán hàng thật.</p>
 <% if(report.unknown) { %><p class="notice"><%= report.unknown %> đơn đã giao/đã thu trong toàn bộ dữ liệu thiếu mốc giao hoặc bằng chứng thu tiền. Các đơn này chưa được cộng vào doanh thu theo kỳ; không tự suy đoán ngày ghi nhận.</p><% } %>
 <h2>Theo ngày</h2>
-<div class="report-table-scroll"><table class="report-table"><thead><tr><th scope="col">Ngày</th><th scope="col">Đơn mới</th><th scope="col">Đã giao</th><th scope="col">Đơn ghi nhận</th><th scope="col">Giảm giá</th><th scope="col">Doanh thu hàng</th><th scope="col">Phí giao</th><th scope="col">COD thực thu</th><th scope="col">VNPay thực thu</th><th scope="col">Đã hoàn</th><th scope="col">Thu trừ hoàn</th></tr></thead><tbody>
-<% report.daily.forEach(row=>{ %><tr><th scope="row"><%= row.date %></th><td><%= row.newOrders %></td><td><%= row.deliveredOrders %></td><td><%= row.recognizedOrders %></td><td><%= money(row.discount) %></td><td><%= money(row.revenue) %></td><td><%= money(row.shipping) %></td><td><%= money(row.cash) %></td><td><%= money(row.onlineCash) %></td><td><%= money(row.refunds) %></td><td><%= money(row.netCash) %></td></tr><% }) %>
+<div class="report-table-scroll"><table class="report-table"><thead><tr><th scope="col">Ngày</th><th scope="col">Đơn mới</th><th scope="col">Đã giao</th><th scope="col">Đơn ghi nhận</th><th scope="col">Giảm giá</th><th scope="col">Doanh thu hàng</th><th scope="col">Phí giao</th><th scope="col">COD thực thu</th><th scope="col">VNPay thực thu</th><th scope="col">Chuyển khoản thực thu</th><th scope="col">Đã hoàn</th><th scope="col">Thu trừ hoàn</th></tr></thead><tbody>
+<% report.daily.forEach(row=>{ %><tr><th scope="row"><%= row.date %></th><td><%= row.newOrders %></td><td><%= row.deliveredOrders %></td><td><%= row.recognizedOrders %></td><td><%= money(row.discount) %></td><td><%= money(row.revenue) %></td><td><%= money(row.shipping) %></td><td><%= money(row.cash) %></td><td><%= money(row.onlineCash) %></td><td><%= money(row.bankCash) %></td><td><%= money(row.refunds) %></td><td><%= money(row.netCash) %></td></tr><% }) %>
 </tbody></table></div>
 <h2>Trạng thái hiện tại của đơn tạo trong kỳ</h2>
 <% if(!report.statuses.length) { %><p>Chưa có đơn trong kỳ.</p><% } %>

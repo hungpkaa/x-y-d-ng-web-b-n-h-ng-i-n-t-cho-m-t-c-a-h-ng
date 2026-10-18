@@ -30,17 +30,17 @@ function salesReport(db,query={},now=Date.now()) {
     const daily=new Map();
     for(let time=range.start;time<range.end;time+=DAY) {
       const date=new Date(time+OFFSET).toISOString().slice(0,10);
-      daily.set(date,{date,newOrders:0,deliveredOrders:0,recognizedOrders:0,subtotal:0,discount:0,revenue:0,shipping:0,cash:0,onlineCash:0,totalCash:0,refunds:0,netCash:0});
+      daily.set(date,{date,newOrders:0,deliveredOrders:0,recognizedOrders:0,subtotal:0,discount:0,revenue:0,shipping:0,cash:0,onlineCash:0,bankCash:0,totalCash:0,refunds:0,netCash:0});
     }
     const merge=(rows)=>{for(const row of rows) Object.assign(daily.get(row.date),row);};
     const args=[range.startUtc,range.endUtc];
     merge(db.prepare("SELECT date(created_at,'+7 hours') date,COUNT(*) newOrders FROM orders WHERE created_at>=? AND created_at<? GROUP BY date").all(...args));
     merge(db.prepare(`${events} SELECT date(d.delivered_at,'+7 hours') date,COUNT(*) deliveredOrders FROM delivered d JOIN orders o ON o.id=d.order_id WHERE o.status='DELIVERED' AND d.delivered_at>=? AND d.delivered_at<? GROUP BY date`).all(...args));
     merge(db.prepare(`${events} SELECT date(recognized_at,'+7 hours') date,COUNT(*) recognizedOrders,SUM(subtotal) subtotal,SUM(discount) discount,SUM(subtotal-discount) revenue,SUM(shipping_fee) shipping FROM recognized WHERE recognized_at>=? AND recognized_at<? GROUP BY date`).all(...args));
-    merge(db.prepare(`${events} SELECT date(occurred_at,'+7 hours') date,SUM(CASE WHEN provider='COD' THEN amount ELSE 0 END) cash,SUM(CASE WHEN provider='VNPAY' THEN amount ELSE 0 END) onlineCash FROM cash_events WHERE occurred_at>=? AND occurred_at<? GROUP BY date`).all(...args));
+    merge(db.prepare(`${events} SELECT date(occurred_at,'+7 hours') date,SUM(CASE WHEN provider='COD' THEN amount ELSE 0 END) cash,SUM(CASE WHEN provider='VNPAY' THEN amount ELSE 0 END) onlineCash,SUM(CASE WHEN provider='BANK_TRANSFER' THEN amount ELSE 0 END) bankCash FROM cash_events WHERE occurred_at>=? AND occurred_at<? GROUP BY date`).all(...args));
     merge(db.prepare("SELECT date(occurred_at,'+7 hours') date,SUM(amount) refunds FROM refunds WHERE occurred_at>=? AND occurred_at<? GROUP BY date").all(...args));
-    const rows=[...daily.values()],summary={newOrders:0,deliveredOrders:0,recognizedOrders:0,subtotal:0,discount:0,revenue:0,shipping:0,cash:0,onlineCash:0,totalCash:0,refunds:0,netCash:0};
-    for(const row of rows) {row.totalCash=row.cash+row.onlineCash;row.netCash=row.totalCash-row.refunds;}
+    const rows=[...daily.values()],summary={newOrders:0,deliveredOrders:0,recognizedOrders:0,subtotal:0,discount:0,revenue:0,shipping:0,cash:0,onlineCash:0,bankCash:0,totalCash:0,refunds:0,netCash:0};
+    for(const row of rows) {row.totalCash=row.cash+row.onlineCash+row.bankCash;row.netCash=row.totalCash-row.refunds;}
     for(const row of rows) for(const key of Object.keys(summary)) summary[key]+=row[key];
     const statuses=db.prepare('SELECT status,COUNT(*) count FROM orders WHERE created_at>=? AND created_at<? GROUP BY status ORDER BY status').all(...args);
     const bestSellers=db.prepare(`${events} SELECT i.product_id,i.sku_snapshot sku,i.name,SUM(i.quantity) quantity,SUM(i.quantity*i.price) gross FROM order_items i JOIN orders o ON o.id=i.order_id JOIN delivered d ON d.order_id=o.id WHERE o.status='DELIVERED' AND d.delivered_at>=? AND d.delivered_at<? GROUP BY i.product_id,i.sku_snapshot ORDER BY quantity DESC,i.product_id,i.sku_snapshot LIMIT 10`).all(...args);
@@ -58,7 +58,7 @@ function csvCell(value) {
 }
 function reportCsv(report) {
   const rows=[['Nhóm','Ngày','Chỉ tiêu / SKU','Đối tượng','Số lượng','Số tiền VND']];
-  const metrics={newOrders:'Đơn mới',deliveredOrders:'Đơn đã giao',recognizedOrders:'Đơn ghi nhận doanh thu',subtotal:'Tiền hàng trước giảm',discount:'Giảm giá',revenue:'Doanh thu hàng đã giao và thu tiền',shipping:'Phí giao của đơn ghi nhận',cash:'COD thực thu',onlineCash:'VNPay thực thu',totalCash:'Tổng tiền thu',refunds:'Tiền đã hoàn',netCash:'Thu trừ hoàn'};
+  const metrics={newOrders:'Đơn mới',deliveredOrders:'Đơn đã giao',recognizedOrders:'Đơn ghi nhận doanh thu',subtotal:'Tiền hàng trước giảm',discount:'Giảm giá',revenue:'Doanh thu hàng đã giao và thu tiền',shipping:'Phí giao của đơn ghi nhận',cash:'COD thực thu',bankCash:'Chuyển khoản ngân hàng thực thu',onlineCash:'VNPay thực thu',totalCash:'Tổng tiền thu',refunds:'Tiền đã hoàn',netCash:'Thu trừ hoàn'};
   for(const daily of report.daily) for(const [key,label] of Object.entries(metrics)) rows.push(['Theo ngày',daily.date,label,'',key.endsWith('Orders')?daily[key]:'',key.endsWith('Orders')?'':daily[key]]);
   for(const row of report.statuses) rows.push(['Đơn mới theo trạng thái','',labels[row.status]??row.status,'',row.count,'']);
   for(const row of report.bestSellers) rows.push(['Top 10 SKU đã giao','',row.sku,row.name,row.quantity,row.gross]);
