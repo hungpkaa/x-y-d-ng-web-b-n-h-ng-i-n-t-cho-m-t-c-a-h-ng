@@ -1,0 +1,19 @@
+<% const registering=page==='register'; %>
+<div class="auth-layout">
+  <aside class="auth-intro"><a href="/" class="auth-brand">Electro Store</a><p class="auth-eyebrow">THIẾT BỊ PHÙ HỢP · MUA SẮM THUẬN TIỆN</p><h2><%= registering?'Bắt đầu với tài khoản của bạn':'Chào mừng bạn trở lại' %></h2><p>Chọn cấu hình phù hợp và theo dõi việc mua sắm ở cùng một nơi.</p><ul><li>Lưu giỏ hàng theo tài khoản</li><li>Theo dõi đơn và tiến trình giao hàng</li><li>Gửi yêu cầu hỗ trợ theo đơn đã đặt</li></ul><a href="/">← Tiếp tục xem sản phẩm</a></aside>
+  <section class="panel auth-card" aria-labelledby="auth-heading">
+    <nav class="auth-tabs" aria-label="Đăng nhập hoặc đăng ký"><a href="/login" <%= !registering?'aria-current=page':'' %>>Đăng nhập</a><a href="/register" <%= registering?'aria-current=page':'' %>>Đăng ký</a></nav>
+    <h1 id="auth-heading"><%= registering?'Tạo tài khoản':'Đăng nhập' %></h1><p class="configuration-help"><%= registering?'Điền thông tin bên dưới để tạo tài khoản khách hàng.':'Nhập email và mật khẩu bạn đã đăng ký.' %></p>
+    <form method="post" action="/<%= page %>" class="auth-form">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <% if(registering) { %><label for="auth-name">Họ và tên</label><input id="auth-name" name="name" minlength="2" maxlength="80" autocomplete="name" placeholder="Nguyễn Văn An" required><% } %>
+      <label for="auth-email">Email</label><input id="auth-email" type="email" name="email" maxlength="150" autocomplete="<%= registering?'email':'username' %>" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="ban@example.com" required>
+      <label for="auth-password">Mật khẩu</label><div class="password-field"><input id="auth-password" type="password" name="password" minlength="<%= registering?10:1 %>" maxlength="128" autocomplete="<%= registering?'new-password':'current-password' %>" aria-describedby="password-hint caps-lock-hint" required><button type="button" class="password-toggle" data-password-toggle aria-controls="auth-password" aria-pressed="false" hidden>Hiện</button></div>
+      <p id="password-hint" class="auth-hint"><%= registering?'Từ 10 đến 128 ký tự. Bạn có thể dán mật khẩu từ trình quản lý mật khẩu.':'Mật khẩu phân biệt chữ hoa và chữ thường.' %></p><p id="caps-lock-hint" class="auth-caps" role="status" hidden>Caps Lock đang bật.</p>
+      <% if(!registering) { %><a class="auth-forgot" href="/forgot-password">Quên mật khẩu?</a><% } %>
+      <button type="submit" class="auth-submit"><%= registering?'Tạo tài khoản':'Đăng nhập' %></button>
+    </form>
+    <p class="auth-switch"><%= registering?'Đã có tài khoản?':'Chưa có tài khoản?' %> <a href="<%= registering?'/login':'/register' %>"><%= registering?'Đăng nhập ngay':'Đăng ký tài khoản' %></a></p>
+    <% if(registering) { %><p class="auth-hint">Tạo tài khoản xong, bạn sẽ đăng nhập để bắt đầu mua hàng.</p><% } %>
+  </section>
+</div>

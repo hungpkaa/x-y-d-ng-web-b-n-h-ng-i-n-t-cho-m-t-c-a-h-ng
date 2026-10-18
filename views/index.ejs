@@ -8,7 +8,7 @@
 <% } else if(page === 'product') { %>
 <%- include('product-skus') %>
 <% } else if(page === 'login' || page === 'register') { %>
-<section class="panel narrow"><h1><%= page==='login' ? 'Đăng nhập' : 'Tạo tài khoản' %></h1><form method="post" action="/<%= page %>"><input type="hidden" name="_csrf" value="<%= csrf %>"><% if(page==='register') { %><label>Họ tên<input name="name" minlength="2" maxlength="80" autocomplete="name" required></label><% } %><label>Email<input type="email" name="email" maxlength="150" autocomplete="email" required></label><label>Mật khẩu<input type="password" name="password" minlength="<%= page==='register' ? 10 : 1 %>" maxlength="128" autocomplete="<%= page==='register' ? 'new-password' : 'current-password' %>" required></label><% if(page==='register') { %><small>Ít nhất 10 ký tự.</small><% } %><button><%= page==='login' ? 'Đăng nhập' : 'Đăng ký' %></button></form><% if(page==='login') { %><p><a href="/forgot-password">Quên mật khẩu?</a></p><% } %></section>
+<%- include('auth') %>
 <% } else if(page==='cart') { %>
 <%- include('cart') %>
 <% } else if(page==='checkout') { %>

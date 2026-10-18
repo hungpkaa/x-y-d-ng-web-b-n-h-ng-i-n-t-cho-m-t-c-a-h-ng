@@ -1,4 +1,24 @@
 'use strict';
+
+document.querySelectorAll('[data-password-toggle]').forEach(button=>{
+  const input=document.getElementById(button.getAttribute('aria-controls'));
+  if(!input) return;
+  button.hidden=false;
+  button.addEventListener('click',()=>{
+    const reveal=input.type==='password';
+    input.type=reveal?'text':'password';
+    button.textContent=reveal?'Ẩn':'Hiện';
+    button.setAttribute('aria-pressed',String(reveal));
+    button.setAttribute('aria-label',reveal?'Ẩn mật khẩu':'Hiện mật khẩu');
+  });
+  button.setAttribute('aria-label','Hiện mật khẩu');
+  const caps=document.getElementById('caps-lock-hint');
+  if(caps) {
+    const update=event=>{caps.hidden=!event.getModifierState?.('CapsLock');};
+    input.addEventListener('keydown',update);input.addEventListener('keyup',update);
+    input.addEventListener('blur',()=>{caps.hidden=true;});
+  }
+});
 document.querySelectorAll('form[method="post"]').forEach(form=>{
   form.addEventListener('submit',event=>{
     if(form.dataset.submitting==='1'){event.preventDefault();return;}
