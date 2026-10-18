@@ -186,14 +186,14 @@ app.post('/forgot-password',(req,res)=>{
 });
 app.get('/reset-password',(req,res)=>{
   res.set('Referrer-Policy','no-referrer').set('Cache-Control','no-store');
-  if(typeof req.query.token!=='string'||! /^[a-f0-9]{64}$/.test(req.query.token)) return res.status(400).send('Liên kết khôi phục không hợp lệ.');
+  if(typeof req.query.token!=='string'||! /^[a-f0-9]{64}$/.test(req.query.token)) return render(res.status(400),'reset-password',{token:'',resetError:'Liên kết khôi phục không hợp lệ. Hãy yêu cầu liên kết mới.'});
   render(res,'reset-password',{token:req.query.token});
 });
 app.post('/reset-password',(req,res,next)=>{
   res.set('Referrer-Policy','no-referrer').set('Cache-Control','no-store');
   if(!customerServices.rateLimit(db,'reset-submit:'+req.ip,10)) return res.status(429).send('Vui lòng thử lại sau 15 phút.');
   const result=customerServices.resetPassword(db,req.body.token,req.body);
-  if(result.status!==200) return res.status(result.status).send(result.message);
+  if(result.status!==200) return render(res.status(result.status),'reset-password',{token:typeof req.body.token==='string'&&/^[a-f0-9]{64}$/.test(req.body.token)?req.body.token:'',resetError:result.message});
   req.session.destroy(error=>{if(error) return next(error);res.clearCookie('connect.sid');res.redirect('/login');});
 });
 app.post('/register',(req,res) => {
