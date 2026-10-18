@@ -163,6 +163,8 @@ test('PostgreSQL: promotion limits, review moderation, private support and list 
   assert.equal(publicReviews(db,1).summary.average,5);
   assert.equal(listReviews(db,{status:'APPROVED',q:'PostgreSQL'}).rows.length,1);
   const ticket=createSupport(db,{id:user},{order_id:String(id),subject:'Order help',content:'Public question'});
+  assert.equal(createSupport(db,{id:user},{order_id:'abc',subject:'Invalid order',content:'Invalid order'}).status,404);
+  assert.throws(()=>supportDetail(db,{id:user},NaN),error=>error.status===404);
   assert.equal(ticket.status,200);
   assert.equal(replySupport(db,{id:admin},ticket.id,{version:'1',content:'Private staff note',internal:'1'}).status,200);
   assert.equal(supportDetail(db,{id:user},ticket.id).messages.length,1);

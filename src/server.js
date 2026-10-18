@@ -241,6 +241,14 @@ app.get('/support',customer,(req,res)=>{
   render(res,'support',result);
 });
 app.get('/support/new',customer,(req,res)=>{
+  if(req.query.order===undefined) {
+    const listing=listRecords(db,'orders',req.query,req.user.id);
+    if(listing.status!==200) return res.status(listing.status).send(listing.message);
+    // Keep pagination on the order picker rather than the normal order list.
+    for(const key of ['previous','next']) if(listing.paging[key]) listing.paging[key]=listing.paging[key].replace('/orders?','/support/new?');
+    return render(res,'support-select-order',{orders:listing.rows,filters:listing.filters,paging:listing.paging});
+  }
+  if(typeof req.query.order!=='string'||!/^[1-9]\d*$/.test(req.query.order)||!Number.isSafeInteger(Number(req.query.order))) return res.status(400).send('Hãy mở chi tiết đơn hàng và chọn yêu cầu hỗ trợ cho đơn đó.');
   const order=db.prepare('SELECT id FROM orders WHERE id=? AND user_id=?').get(Number(req.query.order),req.user.id);
   if(!order) return res.status(404).send('Không tìm thấy đơn hàng.');
   render(res,'support-new',{order});
@@ -511,7 +519,7 @@ app.post('/admin/jobs/:id/retry',admin,(req,res)=>{
   });productResult(req,res,result,'/admin/operations');
 });
 app.use((req,res) => res.status(404).send('Trang không tồn tại.'));
-app.use((error,req,res,next) => { if(error.type==='entity.too.large') return res.status(413).send('Dữ liệu gửi lên quá lớn. Ảnh tối đa 5MB.'); console.error(JSON.stringify({level:'error',requestId:req.requestId,event:'request_failed',code:error.code||'INTERNAL'})); res.status(500).send('Có lỗi xử lý. Vui lòng thử lại.'); });
+app.use((error,req,res,next) => { if(error.type==='entity.too.large') return res.status(413).send('Dữ liệu gửi lên quá lớn. Ảnh tối đa 5MB.'); console.error(JSON.stringify({level:'error',requestId:req.requestId,event:'request_failed',method:req.method,route:typeof req.route?.path==='string'?req.route.path:'unmatched',query:error.queryContext,code:error.code||'INTERNAL'})); res.status(500).send('Có lỗi xử lý. Vui lòng thử lại.'); });
 payments.expirePayments(db);
 const expiryTimer=setInterval(()=>{try {payments.expirePayments(db);} catch {console.error('Payment expiry transaction failed');}},30000);
 expiryTimer.unref();

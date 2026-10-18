@@ -4,6 +4,7 @@ const {actorUser,reject}=require('./accounts');
 const {pagination}=require('./product-list');
 const hash=value=>createHash('sha256').update(value).digest('hex');
 const text=(value,min,max)=>typeof value==='string'&&value.trim().length>=min&&value.trim().length<=max;
+const validId=value=>(typeof value==='number'||typeof value==='string')&&/^[1-9]\d*$/.test(String(value))&&Number.isSafeInteger(Number(value));
 function audit(db,actor,action,type,id,data) {
   db.prepare('INSERT INTO audit_logs(actor_id,action,entity_type,entity_id,after_json) VALUES(?,?,?,?,?)').run(actor.id,action,type,id,JSON.stringify(data));
 }
@@ -79,6 +80,7 @@ function changeAddress(db,actor,id,input,action) {
   });
 }
 function visibleTicket(db,user,id) {
+  if(!validId(id)) reject(404,'Không tìm thấy yêu cầu hỗ trợ.');
   const row=db.prepare('SELECT s.*,u.name assigned_name FROM support_requests s LEFT JOIN users u ON u.id=s.assigned_to WHERE s.id=?').get(id);
   if(!row||user.role==='CUSTOMER'&&row.user_id!==user.id) reject(404,'Không tìm thấy yêu cầu hỗ trợ.');
   return row;
@@ -106,6 +108,7 @@ function supportDetail(db,actor,id,query={}) {
 function createSupport(db,actor,input) {
   return transaction(db,()=>{
     const user=actorUser(db,actor,['CUSTOMER']);
+    if(!validId(input.order_id)) reject(404,'Không tìm thấy đơn hàng của bạn.');
     const order=db.prepare('SELECT id FROM orders WHERE id=? AND user_id=?').get(Number(input.order_id),user.id);
     if(!order) reject(404,'Không tìm thấy đơn hàng của bạn.');
     if(!text(input.subject,1,120)||!text(input.content,1,2000)||input.internal!==undefined) reject(400,'Nhập chủ đề và nội dung hỗ trợ hợp lệ.');

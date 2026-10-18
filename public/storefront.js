@@ -38,3 +38,24 @@ if(gallery) gallery.querySelectorAll('[data-image]').forEach(button=>button.addE
 }));
 const filters=document.querySelector('.catalog-filter-panel');
 if(filters&&window.matchMedia('(max-width:600px)').matches) filters.open=false;
+
+const differenceToggle=document.querySelector('[data-compare-differences]');
+const comparisonTable=document.querySelector('[data-comparison-table]');
+if(differenceToggle&&comparisonTable) {
+  differenceToggle.closest('label').hidden=false;
+  const rows=[...comparisonTable.querySelectorAll('tbody tr')];
+  const status=document.querySelector('[data-compare-status]');
+  differenceToggle.addEventListener('change',()=>{
+    let visible=0;
+    rows.forEach(row=>{
+      row.hidden=differenceToggle.checked&&!row.classList.contains('is-different');
+      if(!row.hidden) visible++;
+    });
+    if(status) {
+      status.hidden=false;
+      status.textContent=differenceToggle.checked
+        ?(visible?'Đang hiển thị '+visible+' thông tin khác nhau.':'Các cấu hình không có khác biệt trong những thông tin đã cung cấp.')
+        :'Đang hiển thị toàn bộ thông tin so sánh.';
+    }
+  });
+}

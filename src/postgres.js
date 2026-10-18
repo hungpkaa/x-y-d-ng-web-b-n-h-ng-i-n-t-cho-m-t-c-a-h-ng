@@ -28,7 +28,14 @@ class PostgresDatabase {
       throw new Error('PostgreSQL response timed out; connection was closed');
     }
     const output=JSON.parse(new TextDecoder().decode(new Uint8Array(buffer,0,Atomics.load(state,1))),(_,value)=>typeof value?.postgresBytea==='string'?Buffer.from(value.postgresBytea,'base64'):value);
-    if(output.error) {const error=new Error(output.error.message);error.code=output.error.code;error.hint=output.error.hint;throw error;}
+    if(output.error) {
+      const error=new Error(output.error.message);error.code=output.error.code;error.hint=output.error.hint;
+      // Only identifiers from source SQL: never include SQL text, values or provider DETAIL.
+      const operation=/^\s*(SELECT|INSERT|UPDATE|DELETE)\b/i.exec(sql)?.[1]?.toUpperCase();
+      const table=/\b(?:FROM|INTO|UPDATE)\s+"?([a-z_][a-z0-9_]*)"?/i.exec(sql)?.[1];
+      error.queryContext={operation:operation||'OTHER',table:table||'unknown',nonFiniteParameters:args.filter(value=>typeof value==='number'&&!Number.isFinite(value)).length};
+      throw error;
+    }
     return output;
   }
   exec(sql) {this.query(sql==='BEGIN IMMEDIATE'||sql==='BEGIN'?sql:translate(sql));}

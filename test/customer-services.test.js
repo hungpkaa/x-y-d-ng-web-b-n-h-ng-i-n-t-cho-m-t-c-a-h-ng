@@ -82,6 +82,11 @@ test('Hỗ trợ kiểm tra đơn/chủ ticket; khách không thấy tin nội b
     const order=createOrder(db,1,{'1':1},'Customer','0901234567','123 Example street'),input={order_id:String(order),subject:'Delivery question',content:'Public question'};
     assert.equal(services.createSupport(db,{id:2},input).status,404);
     const id=services.createSupport(db,{id:1},input).id;
+    for(const order_id of [undefined,'abc','NaN','1.5',[],{},'9007199254740992']) assert.equal(services.createSupport(db,{id:1},{...input,order_id}).status,404);
+    for(const badId of [NaN,Infinity,-1,1.5]) {
+      assert.throws(()=>services.supportDetail(db,{id:1},badId),error=>error.status===404);
+      assert.equal(services.replySupport(db,{id:1},badId,{version:1,content:'Invalid ticket'}).status,404);
+    }
     assert.throws(()=>services.supportDetail(db,{id:2},id),error=>error.status===404);
     assert.equal(services.replySupport(db,{id:1},id,{version:'1',content:'Private',internal:'1'}).status,403);
     assert.equal(services.replySupport(db,{id:3},id,{version:'1',content:'Internal-only value',internal:'1'}).status,200);

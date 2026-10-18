@@ -52,6 +52,17 @@ test('HTTP địa chỉ, hỗ trợ/nội bộ, SMTP giả, vô hiệu phiên, V
     const orderUrl=placed.headers.get('location');assert.match(orderUrl,/^\/orders\/\d+$/);
     assert.match(await (await request(orderUrl,customer)).text(),/Thanh toán VNPay sandbox/);
     const supportPage=await (await request('/support/new?order='+orderUrl.split('/').pop(),customer)).text();assert.match(supportPage,/Hỗ trợ đơn/);
+    const handoff=await request('/chatbot/message',customer,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({_csrf:customer.csrf,message:'Liên hệ nhân viên hỗ trợ'})});
+    assert.equal(handoff.status,200);
+    const supportLink=(await handoff.json()).links.find(link=>link.label==='Gửi yêu cầu cho nhân viên');
+    assert.equal(supportLink.url,'/support/new');
+    const picker=await request(supportLink.url,customer);assert.equal(picker.status,200);
+    const pickerHtml=await picker.text();assert.ok(pickerHtml.includes('/support/new?order='+orderUrl.split('/').pop()));
+    const otherPicker=await (await request('/support/new',other)).text();
+    assert.ok(!otherPicker.includes('/support/new?order='+orderUrl.split('/').pop()));assert.match(otherPicker,/Bạn chưa có đơn hàng/);
+    assert.equal((await request('/support/new?order=abc',customer)).status,400);
+    assert.equal((await request('/support/not-a-number',customer)).status,404);
+    assert.equal((await post('/support',customer,{order_id:'abc',subject:'Invalid order',content:'Invalid order'})).status,404);
     assert.equal((await post('/support',other,{order_id:orderUrl.split('/').pop(),subject:'Other account attempt',content:'Not my order'})).status,404);
     const created=await post('/support',customer,{order_id:orderUrl.split('/').pop(),subject:'Where is my order?',content:'Public question'});
     const ticketUrl=created.headers.get('location');assert.match(ticketUrl,/^\/support\/\d+$/);
