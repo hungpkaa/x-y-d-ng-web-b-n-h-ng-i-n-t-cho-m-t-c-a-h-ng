@@ -1,7 +1,7 @@
 const express = require('express');
 const session = require('express-session');
 const helmet = require('helmet');
-const { randomBytes, timingSafeEqual } = require('node:crypto');
+const { randomBytes, timingSafeEqual, createHash } = require('node:crypto');
 const path = require('node:path');
 const { defaultDatabase, hashPassword, verifyPassword } = require('./db');
 const { transitionOrder,recordCodReceipt, transitions, labels, getVariant } = require('./orders');
@@ -11,7 +11,9 @@ const { listProducts } = require('./product-list');
 const { saveDefinition,saveAttributes,getAttributes } = require('./attributes');
 const { addImage,changeImage,reorderImages } = require('./product-images');
 const { DatabaseSessionStore,sessionSecret }=require('./session-store');
-const { issueCheckout,submitCheckout }=require('./checkout');
+const { issueCheckout }=require('./checkout');
+const { submitAccountCheckout }=require('./checkout');
+const accountCart=require('./account-cart');
 const {saveProfile,changePassword,createStaff,saveStaff,setAccountStatus}=require('./accounts');
 const {listRecords}=require('./management-list');
 const {shippingPolicy,saveShippingPolicy}=require('./shipping');
@@ -28,7 +30,13 @@ const engagementEnabled=()=>engagement.enabled(db);
 const mailer=require('./mail').createMailer();
 const paymentConfig=payments.vnpayConfig();
 const db = defaultDatabase();
+const jobs=require('./jobs');
+const paymentExceptions=require('./payment-exceptions');
+const storeContent=require('./store-content');
 const app = express();
+app.use((req,res,next)=>{req.requestId=randomBytes(12).toString('hex');res.set('X-Request-ID',req.requestId);next();});
+app.get('/health/live',(req,res)=>res.json({status:'ok'}));
+app.get('/health/ready',(req,res)=>{try{db.prepare('SELECT 1 AS ok').get();res.json({status:'ok'});}catch{res.status(503).json({status:'unavailable'});}});
 if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) throw new Error('Cần SESSION_SECRET khi chạy production');
 app.set('view engine','ejs');
 app.set('views',path.join(__dirname,'..','views'));
@@ -59,13 +67,25 @@ app.use((req,res,next) => {
   if(req.session.userId&&(!req.user||req.user.status!=='ACTIVE'||req.user.auth_version!==(req.session.authVersion??1))) {
     return req.session.destroy(error=>{if(error) return next(error);res.clearCookie('connect.sid');res.redirect('/login');});
   }
+  if(req.user?.role==='CUSTOMER') {
+    if(Object.keys(req.session.cart).length) {
+      const imported=accountCart.mergeCart(db,req.user,createHash('sha256').update('legacy:'+req.sessionID).digest('hex'),req.session.cart);
+      if(imported.status!==200) return res.status(imported.status).send(imported.message);
+      req.session.cart={};
+    }
+    req.accountCart=accountCart.readCart(db,req.user);
+    if(req.accountCart.status!==200) return res.status(req.accountCart.status).send(req.accountCart.message);
+  }
+  res.locals.cartVersion=req.accountCart?.version??null;
+  res.locals.store=storeContent.content(db);
+  res.locals.storeCategories=db.prepare('SELECT name FROM categories WHERE active=1 ORDER BY name').all();
   res.locals.user = req.user;
   if(req.user) res.set('Cache-Control','no-store');
   res.locals.csrf = req.session.csrf;
   res.locals.money = value => new Intl.NumberFormat('vi-VN',{ style:'currency',currency:'VND' }).format(value);
   res.locals.labels = labels;
   res.locals.transitions = transitions;
-  res.locals.cartCount = Object.values(req.session.cart).reduce((a,b) => a+b,0);
+  res.locals.cartCount = Object.values(req.accountCart?.quantities??req.session.cart).reduce((a,b) => a+b,0);
   const comparison=readComparison(db,req.session.comparison);
   if(comparison.removed) req.session.notice=[req.session.notice,'Danh sách so sánh đã bỏ các SKU không còn được công bố hoặc không còn cùng danh mục.'].filter(Boolean).join(' ');
   req.session.comparison=comparison.ids;
@@ -93,7 +113,7 @@ const admin = (req,res,next) => req.user?.role === 'ADMIN' ? next() : res.status
 function flash(req,res,message,url) { req.session.notice=message; res.redirect(url); }
 function render(res,page,data={}) { res.render('index',{ page,...data }); }
 function textField(value,min,max) { return typeof value === 'string' && value.trim().length >= min && value.trim().length <= max; }
-const attempts = new Map();
+
 app.post('/chatbot/message',(req,res)=>{
   res.set('Cache-Control','no-store');
   const now=Date.now(),limit=req.session.chatLimit;
@@ -185,25 +205,29 @@ app.post('/register',(req,res) => {
 });
 app.get('/login',(req,res) => render(res,'login'));
 app.post('/login',(req,res,next) => {
-  const key = req.ip;
-  const now = Date.now();
-  if (attempts.size > 1000) for (const [ip,value] of attempts) if (value.until < now) attempts.delete(ip);
-  const record = attempts.get(key);
-  if (record && record.until > now && record.count >= 10) return res.status(429).send('Đã thử đăng nhập quá nhiều lần. Hãy thử lại sau 15 phút.');
-  if (!record || record.until < now) attempts.set(key,{count:1,until:now+900000}); else record.count++;
+  const failureKey='login-failures:'+req.ip;
+  if(!customerServices.rateLimit(db,'login-requests:'+req.ip,60)||customerServices.isRateLimited(db,failureKey,10)) {
+    res.set('Retry-After','900');
+    return res.status(429).send('Đã thử đăng nhập quá nhiều lần. Hãy thử lại sau 15 phút.');
+  }
   const email = String(req.body.email || '').trim().toLowerCase();
   const password = String(req.body.password || '');
-  if (password.length > 128) return flash(req,res,'Thông tin đăng nhập không đúng.','/login');
+  const failed=()=>{customerServices.rateLimit(db,failureKey,10);return flash(req,res,'Thông tin đăng nhập không đúng.','/login');};
+  if (password.length > 128) return failed();
   const user = db.prepare('SELECT * FROM users WHERE email=?').get(email);
-  if (!user || user.status!=='ACTIVE' || !verifyPassword(password,user.password)) return flash(req,res,'Thông tin đăng nhập không đúng.','/login');
-  attempts.delete(key);
+  if (!user || user.status!=='ACTIVE' || !verifyPassword(password,user.password)) return failed();
+
   const cart = user.role==='CUSTOMER'?req.session.cart:{};
+  if(user.role==='CUSTOMER'&&Object.keys(cart).length) {
+    const merged=accountCart.mergeCart(db,{id:user.id},req.session.cartSourceKey||createHash('sha256').update('guest:'+req.sessionID).digest('hex'),cart);
+    if(merged.status!==200) return flash(req,res,merged.message,'/login');
+  }
   const comparison=req.session.comparison;
   const recentProducts=(req.session.recentProducts||[]).slice(0,20);
   if(engagementEnabled()&&user.role==='CUSTOMER') {
     for(const id of [...recentProducts].reverse()) engagement.recordView(db,user,id);
   }
-  req.session.regenerate(error => { if(error) return next(error); req.session.userId=user.id; req.session.authVersion=user.auth_version; req.session.cart=cart; req.session.cartVersion=2; req.session.comparison=comparison; req.session.recentProducts=recentProducts; res.redirect('/'); });
+  req.session.regenerate(error => { if(error) return next(error); req.session.userId=user.id; req.session.authVersion=user.auth_version; req.session.cart={}; req.session.cartVersion=2; req.session.comparison=comparison; req.session.recentProducts=recentProducts; res.redirect('/'); });
 });
 app.post('/logout',(req,res,next) => req.session.destroy(error => { if(error) return next(error); res.clearCookie('connect.sid'); res.redirect('/'); }));
 app.get('/profile',auth,(req,res)=>render(res,'profile'));
@@ -323,6 +347,7 @@ app.get('/admin/reviews',admin,(req,res)=>{
 });
 app.post('/admin/reviews/:id/status',admin,(req,res)=>productResult(req,res,moderateReview(db,req.user,Number(req.params.id),req.body),'/admin/reviews'));
 function cartItems(req) {
+  if(req.accountCart) return req.accountCart.items.map(item=>({...item,id:item.variantId,price:item.unitPrice??0,stock:item.available}));
   return Object.entries(req.session.cart).map(([id,quantity]) => {
     const product = getVariant(db,Number(id));
     return product ? { ...product,quantity } : null;
@@ -330,20 +355,28 @@ function cartItems(req) {
 }
 app.get('/cart',cartAccess,(req,res) => { const items=cartItems(req); render(res,'cart',{items,total:items.reduce((sum,item)=>sum+item.price*item.quantity,0)}); });
 app.post('/cart',cartAccess,(req,res) => {
+  if(req.accountCart) {
+    const result=accountCart.updateCart(db,req.user,{...req.body,variant_id:req.body.id,version:req.body.cart_version??req.accountCart.version});
+    if(result.status===200) result.message='Đã cập nhật giỏ hàng.';
+    return productResult(req,res,result,'/cart');
+  }
   const id = Number(req.body.id);
   const quantity = Number(req.body.quantity);
   const product = Number.isSafeInteger(id)?getVariant(db,id):null;
   if (!product || !Number.isSafeInteger(quantity) || quantity < 0 || quantity > 99) return flash(req,res,'Số lượng không hợp lệ.','/cart');
   const nextQuantity = req.body.action === 'add' ? (req.session.cart[id] || 0)+quantity : quantity;
-  if(!nextQuantity) { delete req.session.cart[id]; return flash(req,res,'Đã xóa SKU khỏi giỏ.','/cart'); }
+  if(!nextQuantity) { delete req.session.cart[id]; req.session.cartSourceKey=randomBytes(32).toString('hex'); return flash(req,res,'Đã xóa SKU khỏi giỏ.','/cart'); }
   if(!product.active||product.product_status!=='ACTIVE') return flash(req,res,'SKU này đã ngừng bán.','/cart');
   if (nextQuantity > product.stock || nextQuantity > 99) return flash(req,res,'Số lượng vượt tồn kho hoặc giới hạn 99.','/cart');
+  if(!req.session.cart[id]&&Object.keys(req.session.cart).length>=100) return flash(req,res,'Giỏ tối đa 100 dòng sản phẩm.','/cart');
   if (!nextQuantity) delete req.session.cart[id]; else req.session.cart[id]=nextQuantity;
+  req.session.cartSourceKey=randomBytes(32).toString('hex');
   flash(req,res,'Đã cập nhật giỏ hàng.','/cart');
 });
 app.get('/checkout',customer,(req,res) => {
   const items=cartItems(req);
   if (!items.length) return res.redirect('/cart');
+  if(!req.accountCart.canCheckout) return flash(req,res,'Giỏ có sản phẩm không hợp lệ hoặc cần điều chỉnh. Hãy kiểm tra số lượng.','/cart');
   const method=req.query.method??'COD';
   if(method==='ONLINE'&&!paymentConfig) return res.status(503).send('Thanh toán trực tuyến tạm thời chưa khả dụng.');
   const addressBook=customerServices.addresses(db,req.user);
@@ -353,24 +386,27 @@ app.get('/checkout',customer,(req,res) => {
     selectedAddress=addressBook.find(row=>String(row.id)===req.query.address);
     if(!selectedAddress) return res.status(404).send('Không tìm thấy địa chỉ của bạn.');
   }
-  try { req.session.checkoutToken=issueCheckout(db,req.user.id,req.session.cart,req.query.code??'',method); }
+  try { req.session.checkoutToken=issueCheckout(db,req.user.id,req.accountCart.quantities,req.query.code??'',method); }
   catch(error) { return flash(req,res,error.message,req.query.code?'/checkout':'/cart'); }
-  const subtotal=items.reduce((sum,item)=>sum+item.price*item.quantity,0),shippingFee=shippingPolicy(db).fee;
+  const subtotal=items.reduce((sum,item)=>sum+item.price*item.quantity,0);
+  const shippingFee=db.prepare('SELECT shipping_fee FROM checkout_requests WHERE user_id=? AND request_key=?').get(req.user.id,req.session.checkoutToken).shipping_fee;
   const promotion=db.prepare('SELECT promotion_code AS code,discount FROM checkout_requests WHERE user_id=? AND request_key=?').get(req.user.id,req.session.checkoutToken);
-  render(res,'checkout',{items,subtotal,shippingFee,discount:promotion.discount,promotionCode:promotion.code,total:subtotal-promotion.discount+shippingFee,token:req.session.checkoutToken,method,onlineAvailable:Boolean(paymentConfig),addressBook,selectedAddress});
+  render(res,'checkout',{items,subtotal,shippingFee,discount:promotion.discount,promotionCode:promotion.code,total:subtotal-promotion.discount+shippingFee,token:req.session.checkoutToken,method,onlineAvailable:Boolean(paymentConfig),addressBook,selectedAddress,checkoutDraft:req.session.checkoutDraft||{}});
 });
 app.post('/checkout',customer,(req,res) => {
   const {recipient,phone,address}=req.body;
+  req.session.checkoutDraft={recipient:String(recipient||'').slice(0,80),phone:String(phone||'').slice(0,20),address:String(address||'').slice(0,300)};
   if (!textField(recipient,2,80) || !/^0\d{9}$/.test(phone || '') || !textField(address,10,300)) return flash(req,res,'Kiểm tra tên, số điện thoại 10 số và địa chỉ nhận hàng.','/checkout');
   try {
     if(req.body.method==='ONLINE'&&!paymentConfig) return res.status(503).send('Thanh toán trực tuyến tạm thời chưa khả dụng.');
-    const result=submitCheckout(db,req.user.id,req.body.token,req.session.cart,recipient.trim(),phone,address.trim(),req.body.code??'',req.body.method??'COD',req.ip);
+    const result=submitAccountCheckout(db,req.user,req.body.token,recipient.trim(),phone,address.trim(),req.body.code??'',req.body.method??'COD',req.ip);
     if(result.status) return productResult(req,res,result,'/cart');
     const {id,replayed}=result;
     delete req.session.checkoutToken;
+    delete req.session.checkoutDraft;
     if(!replayed) req.session.cart={};
     flash(req,res,`Đơn #${id}: ${req.body.method==='ONLINE'?'Chờ thanh toán VNPay trong 15 phút.':'Thanh toán khi nhận hàng.'}`, `/orders/${id}`);
-  } catch(error) { flash(req,res,error.message,'/cart'); }
+  } catch(error) { flash(req,res,error.message,'/checkout'); }
 });
 app.get('/orders',customer,(req,res)=>{
   const listing=listRecords(db,'orders',req.query,req.user.id);
@@ -460,8 +496,22 @@ app.post('/admin/products',staff,(req,res) => {
   if (result.status === 403 || result.status === 404) return res.status(result.status).send(result.message);
   flash(req,res,result.message,result.id?`/admin/products/${result.id}`:'/admin');
 });
+app.get('/admin/content',admin,(req,res)=>render(res,'store-content'));
+app.post('/admin/content',admin,(req,res)=>productResult(req,res,storeContent.saveContent(db,req.user,req.body),'/admin/content'));
+app.get('/admin/operations',admin,(req,res)=>{
+  paymentExceptions.scan(db);
+  render(res,'operations',{jobs:db.prepare('SELECT id,kind,status,attempts,last_error FROM integration_jobs ORDER BY id DESC LIMIT 100').all(),exceptions:db.prepare('SELECT * FROM payment_exceptions ORDER BY id DESC LIMIT 100').all()});
+});
+app.post('/admin/jobs/:id/retry',admin,(req,res)=>{
+  const result=require('./products').transaction(db,()=>{
+    const changed=db.prepare("UPDATE integration_jobs SET status='PENDING',attempts=0,available_at=? WHERE id=? AND status='FAILED'").run(Date.now(),Number(req.params.id)).changes;
+    if(!changed) return {status:409,message:'T?c v? kh?ng c?n ? tr?ng th?i l?i.'};
+    db.prepare("INSERT INTO audit_logs(actor_id,action,entity_type,entity_id,after_json) VALUES(?,'RETRY_JOB','integration_job',?,'{}')").run(req.user.id,Number(req.params.id));
+    return {status:200,message:'?? l?n l?ch th? l?i.'};
+  });productResult(req,res,result,'/admin/operations');
+});
 app.use((req,res) => res.status(404).send('Trang không tồn tại.'));
-app.use((error,req,res,next) => { if(error.type==='entity.too.large') return res.status(413).send('Dữ liệu gửi lên quá lớn. Ảnh tối đa 5MB.'); console.error(error); res.status(500).send('Có lỗi xử lý. Vui lòng thử lại.'); });
+app.use((error,req,res,next) => { if(error.type==='entity.too.large') return res.status(413).send('Dữ liệu gửi lên quá lớn. Ảnh tối đa 5MB.'); console.error(JSON.stringify({level:'error',requestId:req.requestId,event:'request_failed',code:error.code||'INTERNAL'})); res.status(500).send('Có lỗi xử lý. Vui lòng thử lại.'); });
 payments.expirePayments(db);
 const expiryTimer=setInterval(()=>{try {payments.expirePayments(db);} catch {console.error('Payment expiry transaction failed');}},30000);
 expiryTimer.unref();

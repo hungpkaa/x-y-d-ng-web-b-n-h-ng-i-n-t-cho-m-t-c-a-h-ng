@@ -19,6 +19,35 @@ const {listRecords}=require('../src/management-list');
 const {importSqlite}=require('../scripts/import-sqlite-to-postgres');
 
 const enabled=process.env.POSTGRES_TEST==='1'&&!!process.env.DATABASE_URL;
+
+test('PostgreSQL: gộp giỏ một lần và checkout tài khoản không xóa giỏ trên replay',{skip:!enabled},t=>{
+  const {db,user}=fixture(t),cart=require('../src/account-cart'),checkout=require('../src/checkout');
+  const actor={id:user},source=randomBytes(32).toString('hex');
+  assert.equal(cart.mergeCart(db,actor,source,{'1':1}).status,200);
+  assert.equal(cart.mergeCart(db,actor,source,{'1':1}).replayed,true);
+  const token=checkout.issueCheckout(db,user,cart.readCart(db,actor).quantities);
+  const args=[db,actor,token,'Customer','0901234567','123 Example street'];
+  const placed=checkout.submitAccountCheckout(...args);assert.ok(placed.id);
+  assert.deepEqual(cart.readCart(db,actor).quantities,{});
+  assert.equal(cart.updateCart(db,actor,{variant_id:2,quantity:1,version:cart.readCart(db,actor).version}).status,200);
+  assert.equal(checkout.submitAccountCheckout(...args).id,placed.id);
+  assert.deepEqual(cart.readCart(db,actor).quantities,{'2':1});
+});
+
+test('PostgreSQL: giỏ tài khoản độc lập phiên, chủ sở hữu và không giữ kho',{skip:!enabled},t=>{
+  const {db,user,admin}=fixture(t),cart=require('../src/account-cart');
+  const before=db.prepare('SELECT on_hand,reserved FROM product_variants WHERE id=1').get();
+  assert.equal(cart.updateCart(db,{id:user},{variant_id:1,quantity:2,version:0}).status,200);
+  assert.equal(cart.readCart(db,{id:user}).quantities['1'],2);
+  assert.equal(cart.readCart(db,{id:admin}).status,403);
+  const other=Number(db.prepare("INSERT INTO users(name,email,password,role) VALUES('Other','other-cart@test.com','hash','CUSTOMER')").run().lastInsertRowid);
+  assert.deepEqual(cart.readCart(db,{id:other}).items,[]);
+  assert.equal(cart.updateCart(db,{id:user},{variant_id:1,quantity:1,version:0}).status,409);
+  db.prepare('INSERT INTO sessions(sid,data,expires_at) VALUES(?,?,?)').run('cart-session','{}',Date.now()+60000);
+  db.prepare('DELETE FROM sessions WHERE sid=?').run('cart-session');
+  assert.equal(cart.readCart(db,{id:user}).quantities['1'],2);
+  assert.deepEqual(db.prepare('SELECT on_hand,reserved FROM product_variants WHERE id=1').get(),before);
+});
 test('PostgreSQL: favorites, recent views, durable watch notifications and image ordering',{skip:!enabled},t=>{
   const {db,user,admin}=fixture(t),engagement=require('../src/engagement');
   assert.equal(engagement.favorite(db,{id:user},1,'add').status,200);

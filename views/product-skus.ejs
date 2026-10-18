@@ -1,6 +1,6 @@
 <a href="/">← Danh sách sản phẩm</a>
 <section class="panel"><small><%= product.brand %> · <%= product.category %></small><h1><%= product.name %></h1><p><%= product.description %></p></section>
-<div class="gallery"><% images.forEach(image=>{ %><img src="/media/<%= image.storage_key %>" alt="<%= image.alt_text %>" loading="lazy"><% }) %></div>
+<% if(images.length) { %><section class="product-gallery" data-gallery><img class="gallery-main" src="/media/<%= images[0].storage_key %>" alt="<%= images[0].alt_text||product.name %>" width="560" height="380"><div class="gallery-thumbnails"><% images.forEach((image,i)=>{ %><button type="button" class="secondary" data-image="/media/<%= image.storage_key %>" data-alt="<%= image.alt_text||product.name %>" aria-pressed="<%= i===0 %>" aria-label="Xem ?nh <%= i+1 %>"><img src="/media/<%= image.storage_key %>" alt="" width="70" height="60" loading="lazy"></button><% }) %></div></section><% } %>
 <%- include('product-engagement') %>
 <h2>Chọn màu và cấu hình</h2>
 <div class="grid"><% variants.forEach(v=>{ %>

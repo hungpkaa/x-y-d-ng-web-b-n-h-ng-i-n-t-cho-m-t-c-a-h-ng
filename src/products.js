@@ -49,6 +49,8 @@ function saveVariant(db,actor,productId,input) {
   const existing=id===null?null:db.prepare('SELECT * FROM product_variants WHERE id=? AND product_id=?').get(id,productId);
   if(id!==null&&!existing) return fail(404,'Không tìm thấy SKU.');
   if(existing&&Number(input.version)!==existing.version) return fail(409,'SKU đã thay đổi. Hãy tải lại trang.');
+  const weight=input.weight_grams===undefined?(existing?.weight_grams??null):input.weight_grams===''?null:Number(input.weight_grams);
+  if(weight!==null&&(!Number.isSafeInteger(weight)||weight<1||weight>1000000)) return fail(400,'Tr?ng l??ng ph?i t? 1 ??n 1.000.000 gram.');
   const sku=typeof input.sku==='string'?input.sku.trim().toUpperCase():'';
   const color=typeof input.color==='string'?input.color.trim():'';
   const configuration=typeof input.configuration==='string'?input.configuration.trim():'';
@@ -63,6 +65,7 @@ function saveVariant(db,actor,productId,input) {
       let variantId=id;
       if(existing) db.prepare('UPDATE product_variants SET sku=?,color=?,configuration=?,version=version+1 WHERE id=?').run(sku,color,configuration,id);
       else variantId=Number(db.prepare('INSERT INTO product_variants(product_id,sku,color,configuration) VALUES(?,?,?,?)').run(productId,sku,color,configuration).lastInsertRowid);
+      if(input.weight_grams!==undefined) db.prepare('UPDATE product_variants SET weight_grams=? WHERE id=?').run(weight,variantId);
       audit(db,actor,'SAVE_SKU','variant',variantId,existing,db.prepare('SELECT * FROM product_variants WHERE id=?').get(variantId));
       return {status:200,message:'Đã lưu SKU. SKU mới chưa có giá và chưa bật bán.',id:variantId};
     });

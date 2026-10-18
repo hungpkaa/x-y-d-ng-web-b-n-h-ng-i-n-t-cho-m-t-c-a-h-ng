@@ -1,5 +1,7 @@
 # Electro Store
 
+Cập nhật 16/10/2026: đã nối giỏ CUSTOMER lưu theo tài khoản, giữ qua logout/login, gộp nguồn một lần và checkout/xóa mục đã mua nguyên tử. Giỏ vãng lai vẫn dùng session; trường hợp gộp vượt giới hạn phải chỉnh trước đặt. Chi tiết và giới hạn tại [CODE-03A/03B](docs/34_CODE_03A_ROUTE_VA_GOP_GIO.md); các mốc kiểm thử cũ bên dưới là lịch sử.
+
 Đối chiếu đầy đủ docs tại [34 use case và phần còn thiếu](docs/12_ECARTS_ET_IMPLEMENTATION.md). Đã thêm [vận đơn thủ công, giao thất bại và nhận hàng về](docs/13_SU_DUNG_VAN_CHUYEN.md) theo UC-25/26.
 
 ## Bộ tài liệu phân tích và thiết kế

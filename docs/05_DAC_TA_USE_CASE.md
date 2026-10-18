@@ -22,6 +22,10 @@ Phiên bản 1.0 — 05/10/2026. Áp dụng giả định tại [chỉ mục](RE
 
 ## UC-02 — Đăng nhập
 
+Ghi nhận triển khai CODE-02: bộ đếm theo IP lưu CSDL, 10 lần thất bại/15 phút và giới hạn tổng 60 request/15 phút riêng; thành công không tăng/xóa bộ đếm sai. Vượt ngưỡng trả 429 trước kiểm tra mật khẩu. Đây là cấu hình vận hành hiện tại, không phải yêu cầu người dùng đã phê duyệt từng ngưỡng; cần rà soát khi triển khai thật.
+
+Đã chốt ngày 14/10/2026: khi CUSTOMER đăng nhập, gộp giỏ vãng lai với giỏ tài khoản một lần; cùng SKU cộng số lượng. Nếu vượt tồn hoặc giới hạn, báo khách điều chỉnh trước đặt; tải lại trang không cộng lại. STAFF/ADMIN không nhận giỏ mua hàng vào tài khoản quản lý.
+
 - **Tác nhân/mục tiêu:** CUSTOMER/STAFF/ADMIN xác thực vào hệ thống.
 - **Tiền điều kiện:** chưa có phiên; kích hoạt bằng gửi email/mật khẩu.
 - **Luồng chính:** (1) chuẩn hóa email; (2) kiểm tra giới hạn thử; (3) kiểm tra mật khẩu và ACTIVE; (4) tạo ID phiên mới, giữ giỏ khách hợp lệ; (5) điều hướng theo vai trò.
@@ -30,6 +34,8 @@ Phiên bản 1.0 — 05/10/2026. Áp dụng giả định tại [chỉ mục](RE
 - **Nghiệm thu:** ID phiên trước đăng nhập không dùng được; tài khoản khóa không đăng nhập; URL trở lại chỉ được phép nội bộ.
 
 ## UC-03 — Đăng xuất
+
+Đã chốt ngày 14/10/2026: giỏ CUSTOMER lưu theo tài khoản, đăng xuất không mất giỏ; đăng nhập lại thấy giỏ cũ. Đăng xuất vẫn phải kết thúc quyền truy cập của phiên hiện tại. Đây là yêu cầu mục tiêu, chưa phải xác nhận mã phiên hiện tại đã đáp ứng.
 
 - **Tác nhân/mục tiêu:** người đã đăng nhập kết thúc phiên hiện tại.
 - **Tiền điều kiện:** có phiên; kích hoạt bằng nút Đăng xuất.
@@ -40,6 +46,8 @@ Phiên bản 1.0 — 05/10/2026. Áp dụng giả định tại [chỉ mục](RE
 
 ## UC-04 — Cập nhật hồ sơ/mật khẩu
 
+Đã chốt ngày 14/10/2026 về đổi mật khẩu: phải nhập đúng mật khẩu hiện tại; đổi thành công vô hiệu mọi phiên cũ, kể cả phiên đang đổi; người dùng đăng nhập lại bằng mật khẩu mới. Giữ nguyên giỏ lưu theo tài khoản và lịch sử đơn. Thao tác thất bại không đổi mật khẩu hoặc vô hiệu phiên do thao tác đó.
+
 - **Tác nhân/mục tiêu:** K/N/Q sửa hồ sơ của mình.
 - **Tiền điều kiện:** đăng nhập ACTIVE; kích hoạt mở Hồ sơ.
 - **Luồng chính:** (1) xem hồ sơ/địa chỉ; (2) sửa tên, số điện thoại, địa chỉ; (3) nếu đổi mật khẩu nhập mật khẩu hiện tại và mới; (4) validate và lưu; (5) đổi mật khẩu tăng auth_version và buộc đăng nhập lại.
@@ -47,7 +55,22 @@ Phiên bản 1.0 — 05/10/2026. Áp dụng giả định tại [chỉ mục](RE
 - **Hậu điều kiện:** hồ sơ mới dùng cho lần mua sau; snapshot đơn cũ giữ nguyên.
 - **Nghiệm thu:** không sửa hồ sơ/địa chỉ người khác; phiên cũ hết hiệu lực sau đổi mật khẩu.
 
+### UC-04-R — Quên và đặt lại mật khẩu
+
+Phần bổ sung của nhóm tài khoản, không đánh số lại UC-01..34. Quy trình được chốt ngày 14/10/2026; cần bổ sung tham chiếu vào sơ đồ khi rà soát sơ đồ tài khoản.
+
+- **Tác nhân/mục tiêu:** người dùng quên mật khẩu đặt lại qua email.
+- **Tiền điều kiện/kích hoạt:** chọn Quên mật khẩu, nhập email; SMTP cần được cấu hình khi nghiệm thu gửi email thực tế.
+- **Luồng chính:** (1) nhận email và trả thông báo chung; (2) nếu tài khoản đủ điều kiện thì gửi liên kết đặt lại có hạn 30 phút, dùng một lần; (3) người dùng mở liên kết, nhập mật khẩu mới và xác nhận; (4) kiểm tra token và dữ liệu; (5) lưu mật khẩu mới, đánh dấu token đã dùng và vô hiệu mọi phiên cũ trong cùng giao dịch; (6) yêu cầu đăng nhập lại.
+- **Thay thế/lỗi:** email không tồn tại vẫn nhận cùng thông báo; token sai/hết hạn/đã dùng không đổi mật khẩu; lỗi lưu rollback, không vô hiệu phiên hoặc làm mất khả năng sử dụng token do giao dịch thất bại. Tài khoản khóa không được mở khóa qua reset (đề xuất kỹ thuật cần rà soát).
+- **Hậu điều kiện:** thành công chỉ dùng mật khẩu mới, không mất giỏ tài khoản hoặc lịch sử đơn; không tiết lộ email có tài khoản hay không qua thông báo công khai.
+- **Nghiệm thu:** AT-41..43. Thiết kế kỹ thuật: lưu hash token, không ghi token/mật khẩu vào log; giới hạn tần suất và quy tắc thay token khi gửi lại cần rà soát riêng. Đây là đặc tả, chưa xác nhận SMTP thật đã nghiệm thu.
+
 ## UC-05 — Quản lý tài khoản khách/nhân viên
+
+
+
+Đã chốt ngày 14/10/2026: ADMIN khóa/mở khóa CUSTOMER hoặc STAFF, bắt buộc ghi lý do. Khi khóa, mọi phiên đăng nhập hiện có mất hiệu lực; mở khóa phải đăng nhập lại. Giữ tài khoản và lịch sử đơn hàng. Các quy tắc về cấp tài khoản, ADMIN cuối và thay đổi vai trò vẫn là chi tiết thiết kế cần rà soát riêng.
 
 - **Tác nhân/mục tiêu:** ADMIN cấp STAFF, sửa tên, khóa/mở khóa tài khoản.
 - **Tiền điều kiện:** ADMIN ACTIVE; kích hoạt từ danh sách tài khoản có tìm kiếm/phân trang.
@@ -76,6 +99,8 @@ Phiên bản 1.0 — 05/10/2026. Áp dụng giả định tại [chỉ mục](RE
 
 ## UC-08 — Tạo bản nháp sản phẩm/SKU
 
+Đã chốt ngày 14/10/2026: STAFF được tạo nháp, nhập thông tin, ảnh, cấu hình và tồn kho; nháp không hiển thị cho khách. ADMIN thiết lập giá và công bố. Các điều kiện dữ liệu/SKU cụ thể bên dưới là thiết kế cần rà soát riêng.
+
 - **Tác nhân/mục tiêu:** STAFF/ADMIN chuẩn bị sản phẩm mới.
 - **Tiền điều kiện:** danh mục/thương hiệu tồn tại; kích hoạt Thêm bản nháp.
 - **Luồng chính:** (1) nhập tên/mô tả/danh mục/thương hiệu; (2) thêm SKU unique, màu/cấu hình và thông số; (3) kiểm tra dữ liệu; (4) lưu DRAFT, SKU inactive, giá NULL; (5) ghi audit.
@@ -84,6 +109,8 @@ Phiên bản 1.0 — 05/10/2026. Áp dụng giả định tại [chỉ mục](RE
 - **Nghiệm thu:** STAFF tạo được nháp không giá; không thể tạo SKU bán ngay; thất bại không để bản ghi con mồ côi.
 
 ## UC-09 — Cập nhật thông tin/ảnh/SKU/thông số
+
+Đã chốt: STAFF nhập giá trị thông số cho từng SKU theo định nghĩa của danh mục do ADMIN quản lý. Phải tuân thủ kiểu dữ liệu và đơn vị đã định nghĩa; thiếu thông số bắt buộc không đủ điều kiện công bố.
 
 - **Tác nhân/mục tiêu:** STAFF/ADMIN cập nhật mô tả và dữ liệu kỹ thuật.
 - **Tiền điều kiện:** sản phẩm/SKU tồn tại; kích hoạt Sửa.
@@ -112,14 +139,18 @@ Phiên bản 1.0 — 05/10/2026. Áp dụng giả định tại [chỉ mục](RE
 
 ## UC-12 — Công bố/ẩn sản phẩm và SKU
 
+Đã chốt ngày 14/10/2026: chỉ ADMIN công bố và ẩn sản phẩm; trước công bố ADMIN thiết lập giá. Nháp không công khai. Điều kiện công bố đã chốt: có tên, danh mục, thương hiệu, mô tả, ít nhất một ảnh hợp lệ, đủ thông số bắt buộc của danh mục và ít nhất một SKU được bật bán có mã riêng, giá > 0. Không bắt buộc còn hàng để công bố; SKU hết hàng hiển thị “Hết hàng” và không được đặt mua. Nếu tất cả SKU đang bán hết hàng, sản phẩm hiển thị “Hết hàng”.
+
 - **Tác nhân/mục tiêu:** ADMIN điều khiển trạng thái bán.
 - **Tiền điều kiện:** sản phẩm tồn tại; kích hoạt Công bố/Ẩn.
-- **Luồng chính:** (1) chọn trạng thái; (2) khi công bố kiểm tra ảnh/thông tin bắt buộc và ít nhất một SKU có giá hợp lệ; (3) bật SKU được duyệt; (4) lưu trạng thái và audit.
+- **Luồng chính:** (1) chọn trạng thái; (2) khi công bố kiểm tra tên/danh mục/thương hiệu/mô tả, ảnh và thông số bắt buộc; (3) kiểm tra ít nhất một SKU bật bán có mã riêng và giá > 0; (4) lưu trạng thái và audit; (5) hiển thị khả năng mua theo tồn khả dụng của từng SKU, không coi trạng thái công bố là còn hàng.
 - **Thay thế/lỗi:** STAFF bị từ chối; SKU không giá không được active; ẩn không xóa đơn hoặc hủy giữ tồn đã có.
 - **Hậu điều kiện:** ẩn thì không thêm giỏ/tạo đơn mới; đơn cũ vẫn xử lý được.
 - **Nghiệm thu:** sản phẩm ẩn không ở catalog; giỏ chứa SKU bị ẩn không checkout; lịch sử mua không mất.
 
 ## UC-13 — Danh mục/thương hiệu/định nghĩa thuộc tính
+
+Đã chốt: ADMIN định nghĩa thông số theo danh mục; mỗi thông số có kiểu dữ liệu, đơn vị khi phù hợp và dấu bắt buộc. STAFF nhập giá trị từng SKU, không tự thay định nghĩa. Ví dụ minh họa: RAM/bộ nhớ dùng số và GB, màn hình dùng số và inch, pin dùng số và mAh; các thông số cụ thể từng danh mục sẽ lập danh sách riêng, chưa coi ví dụ là cấu hình bắt buộc cuối cùng.
 
 - **Tác nhân/mục tiêu:** ADMIN chuẩn hóa catalog.
 - **Tiền điều kiện:** quyền ADMIN; kích hoạt khu vực cấu hình catalog.
@@ -130,6 +161,8 @@ Phiên bản 1.0 — 05/10/2026. Áp dụng giả định tại [chỉ mục](RE
 
 ## UC-14 — So sánh sản phẩm
 
+Đã chốt: tối đa 3 SKU cùng danh mục; so sánh giá, cấu hình và thông số chuẩn có đơn vị nhất quán; đánh dấu thông số khác nhau, dữ liệu thiếu ghi “Chưa có thông tin”. SKU hết hàng vẫn so sánh được; SKU bị ẩn không được so sánh và được loại khỏi danh sách khi tải lại. Cách lưu danh sách trong phiên là chi tiết thiết kế, chưa chốt riêng.
+
 - **Tác nhân/mục tiêu:** người xem so sánh tối đa 3 SKU thuộc cùng danh mục.
 - **Tiền điều kiện:** SKU ACTIVE; kích hoạt Thêm vào so sánh.
 - **Luồng chính:** (1) chọn SKU; (2) kiểm tra cùng danh mục/không trùng/giới hạn; (3) dựng bảng theo định nghĩa thuộc tính; (4) xem giá, cấu hình, khác biệt; (5) bỏ SKU tùy chọn.
@@ -139,6 +172,8 @@ Phiên bản 1.0 — 05/10/2026. Áp dụng giả định tại [chỉ mục](RE
 
 ## UC-15 — Xem gợi ý
 
+Đã chốt: gợi ý cơ bản ưu tiên cùng danh mục, thương hiệu và khoảng giá gần; chỉ sản phẩm công khai có SKU còn hàng; không gợi ý lại sản phẩm đang xem; hiển thị lý do phù hợp dữ liệu, ví dụ “Cùng thương hiệu”; không dùng Machine Learning. Trọng số, khoảng giá cụ thể, tối đa 6 kết quả và thứ tự phá hòa bên dưới là đề xuất kỹ thuật, chưa chốt riêng.
+
 - **Tác nhân/mục tiêu:** người xem tìm sản phẩm tương tự/phổ biến.
 - **Tiền điều kiện:** mở catalog/chi tiết; kích hoạt vùng Gợi ý.
 - **Luồng chính:** (1) lấy sản phẩm đang xem; (2) lọc ACTIVE có SKU mua được; (3) chấm điểm theo cùng danh mục, thương hiệu, giá gần; (4) dùng lượng đã giao để phá hòa; (5) hiển thị tối đa 6 sản phẩm.
@@ -147,6 +182,8 @@ Phiên bản 1.0 — 05/10/2026. Áp dụng giả định tại [chỉ mục](RE
 - **Nghiệm thu:** không gợi ý chính sản phẩm đang xem/ẩn/hết tồn; cùng dữ liệu cho thứ tự ổn định.
 
 ## UC-16 — Quản lý giỏ hàng
+
+Đã chốt ngày 14/10/2026: giỏ khách đã đăng nhập lưu theo tài khoản; đăng xuất không mất giỏ và đăng nhập lại khôi phục giỏ. Trước đặt hàng kiểm tra lại giá và tồn kho. Khi đăng nhập, gộp giỏ vãng lai với giỏ tài khoản một lần, cộng số lượng cùng SKU; nếu vượt tồn hoặc giới hạn thì báo khách điều chỉnh trước đặt, không âm thầm bỏ sản phẩm hoặc tạo đơn vượt tồn. Cách lưu mục vượt giới hạn là chi tiết kỹ thuật cần thiết kế; không tạo hàng giữ từ việc gộp giỏ.
 
 - **Tác nhân/mục tiêu:** V/K thêm, xem, đổi số lượng, xóa SKU.
 - **Tiền điều kiện:** SKU mua được khi thêm; kích hoạt nút Giỏ hàng.
@@ -159,8 +196,8 @@ Phiên bản 1.0 — 05/10/2026. Áp dụng giả định tại [chỉ mục](RE
 
 - **Tác nhân/mục tiêu:** K biết tổng và điều kiện đặt hàng.
 - **Tiền điều kiện:** giỏ không rỗng; kích hoạt Tiến hành đặt hàng.
-- **Luồng chính:** (1) nhập/chọn địa chỉ, phương thức COD/ONLINE; (2) kiểm tra SKU/tồn; (3) tính giá hàng; (4) nếu có mã kiểm tra điều kiện; (5) tính phí giao theo bảng cấu hình; (6) lưu báo giá và request_key gắn giỏ/giá/địa chỉ; (7) hiển thị tổng.
-- **Thay thế/lỗi:** mã sai/hết hạn/hết lượt báo lỗi, không âm thầm bỏ mã; địa bàn không hỗ trợ không cho đặt; giá thay đổi yêu cầu xác nhận báo giá mới.
+- **Luồng chính:** (1) nhập/chọn địa chỉ, phương thức COD/ONLINE; (2) kiểm tra SKU/tồn; (3) tính giá hàng; (4) nếu có mã kiểm tra điều kiện; (5) lấy phí giao cố định do ADMIN cấu hình (đã chốt ngày 14/10/2026); (6) lưu báo giá và request_key gắn giỏ/giá/địa chỉ/phí; (7) hiển thị tiền hàng, giảm giá, phí giao và tổng trước xác nhận. Đơn tạo thành công lưu phí tại thời điểm mua, thay cấu hình sau này không đổi đơn cũ.
+- **Thay thế/lỗi:** mã sai/hết hạn/hết lượt báo lỗi, không âm thầm bỏ mã; địa chỉ không hợp lệ không cho đặt; giá hoặc phí thay đổi trước xác nhận yêu cầu xác nhận báo giá mới. Biểu phí theo khu vực/trọng lượng là phần mở rộng; địa bàn phục vụ cần chốt riêng.
 - **Hậu điều kiện:** chưa tạo đơn/chưa giữ tồn; total = subtotal - discount + shipping_fee.
 - **Nghiệm thu:** xem báo giá không trừ kho/lượt mã; phí có trong tổng; sửa tổng trình duyệt không ảnh hưởng server.
 
@@ -184,6 +221,8 @@ Phiên bản 1.0 — 05/10/2026. Áp dụng giả định tại [chỉ mục](RE
 
 ## UC-20 — Hủy đơn cá nhân
 
+Quyền và điều kiện hủy đã được người dùng đồng ý ngày 13/10/2026: chủ đơn chỉ hủy khi chờ xác nhận; tiền đã thu phải được theo dõi hoàn riêng, không tự coi đã hoàn. Các chi tiết kỹ thuật bên dưới là thiết kế đề xuất.
+
 - **Tác nhân/mục tiêu:** chủ đơn K hủy khi PENDING.
 - **Tiền điều kiện:** chủ đơn, PENDING; kích hoạt Hủy và nhập lý do.
 - **Luồng chính:** (1) kiểm tra chủ và trạng thái dưới khóa/giao dịch; (2) chuyển CANCELLED; (3) giải phóng reservation/lượt mã một lần; (4) payment PAID chuyển REFUND_PENDING; (5) ghi lịch sử và yêu cầu xử lý tiền nếu cần.
@@ -192,6 +231,8 @@ Phiên bản 1.0 — 05/10/2026. Áp dụng giả định tại [chỉ mục](RE
 - **Nghiệm thu:** hủy và xác nhận đồng thời chỉ một chuyển trạng thái thắng; tiền chỉ hoàn sau bằng chứng UC-34.
 
 ## UC-21 — Tra cứu/xử lý đơn toàn cửa hàng
+
+Quyền hủy đã được người dùng đồng ý ngày 13/10/2026: STAFF/ADMIN hủy trước khi bàn giao cho đơn vị vận chuyển và phải ghi lý do; đã thu tiền thì ghi nhận khoản cần hoàn. Các trạng thái PENDING/CONFIRMED/PREPARING ánh xạ giai đoạn trước bàn giao trong thiết kế hiện tại.
 
 - **Tác nhân/mục tiêu:** N/Q xác nhận, chuẩn bị, hủy đơn trước giao và theo dõi.
 - **Tiền điều kiện:** N/Q ACTIVE; kích hoạt danh sách đơn.
@@ -202,9 +243,9 @@ Phiên bản 1.0 — 05/10/2026. Áp dụng giả định tại [chỉ mục](RE
 
 ## UC-22 — Thanh toán trực tuyến/thử lại
 
-- **Tác nhân/mục tiêu:** K thanh toán đơn ONLINE của mình; T cung cấp URL thanh toán.
+- **Tác nhân/mục tiêu:** K thanh toán đơn ONLINE của mình ở VNPay sandbox; website tạo URL ký theo cấu hình cổng.
 - **Tiền điều kiện:** đơn PENDING, chưa thu, còn hạn giữ hàng; kích hoạt Thanh toán.
-- **Luồng chính:** (1) kiểm tra đơn; (2) dùng lại attempt PENDING hoặc tạo attempt mới sau FAILED; (3) lưu tham chiếu và số tiền/tiền tệ; (4) enqueue job gọi T cùng request_key; (5) nhận URL và đưa K đến T; (6) trang quay lại truy vấn trạng thái server.
+- **Luồng chính:** (1) kiểm tra chủ đơn, trạng thái và hạn từ tạo đơn; (2) dùng lại attempt hợp lệ hoặc tạo mới sau thất bại theo thiết kế; (3) lưu tham chiếu/số tiền/tiền tệ; (4) server tạo URL có chữ ký sandbox; (5) đưa K đến cổng; (6) quay lại chỉ truy vấn trạng thái server. Worker/querydr là phương án mở rộng, không bắt buộc để tạo URL. Thử lại không gia hạn 15 phút.
 - **Thay thế/lỗi:** timeout giữ trạng thái chưa rõ và tra cứu cùng tham chiếu, không tự tạo attempt khác; quá hạn không cho thử lại; đơn PAID hiển thị đã thu; phí và tổng không tính lại trên đơn đã tạo.
 - **Hậu điều kiện:** attempt lưu bền vững; không PAID chỉ vì K quay lại website.
 - **Nghiệm thu:** bấm lặp không tạo nhiều attempt đang mở; K không thanh toán đơn người khác; URL chỉ đến nhà cung cấp cấu hình.
@@ -212,13 +253,15 @@ Phiên bản 1.0 — 05/10/2026. Áp dụng giả định tại [chỉ mục](RE
 ## UC-23 — Tiếp nhận kết quả thanh toán
 
 - **Tác nhân/mục tiêu:** T thông báo kết quả, hệ thống đối soát vào đơn.
-- **Tiền điều kiện:** attempt đã tồn tại; kích hoạt callback/tra cứu chủ động đã xác thực.
+- **Tiền điều kiện:** attempt đã tồn tại; kích hoạt IPN sandbox được xác thực. Tra cứu chủ động thuộc phương án đối soát mở rộng.
 - **Luồng chính:** (1) xác thực chữ ký, merchant, event ID; (2) đối chiếu reference, amount, VND; (3) ghi event unique; (4) khóa attempt và order; (5) cập nhật trạng thái đơn điệu; (6) thành công đúng hạn ghi tiền đã thu và PAID; (7) trả ACK sau commit.
 - **Thay thế/lỗi:** chữ ký/số tiền sai không đổi tiền; event trùng ACK không cập nhật lần hai; thất bại sau thành công không đảo PAID; success đến sau hủy/hết hạn ghi đã thu + REFUND_PENDING, không mở lại đơn/giữ tồn. Thu thành công ở attempt thứ hai khi đơn đã thu tạo payment_exception, không cộng doanh thu lần hai.
 - **Hậu điều kiện:** có dấu vết sự kiện và ngoại lệ; tiền thật luôn được ghi nhận dù cần hoàn.
 - **Nghiệm thu:** callback sai không PAID; lặp/out-of-order không đổi ngược; callback muộn không hồi sinh đơn.
 
 ## UC-24 — Xác nhận thu COD
+
+Đã chốt ngày 14/10/2026: chỉ ADMIN được xác nhận thu đủ COD, kèm mã chứng từ và ghi chú; STAFF cập nhật giao hàng nhưng không xác nhận tiền. DELIVERED không tự chuyển PAID. Trong demo sử dụng dữ liệu/chứng từ mô phỏng được ghi rõ.
 
 - **Tác nhân/mục tiêu:** ADMIN ghi nhận COD đã đối soát.
 - **Tiền điều kiện:** đơn COD DELIVERED, chưa thu; kích hoạt Xác nhận thu.
@@ -229,23 +272,27 @@ Phiên bản 1.0 — 05/10/2026. Áp dụng giả định tại [chỉ mục](RE
 
 ## UC-25 — Tạo vận đơn
 
-- **Tác nhân/mục tiêu:** N/Q yêu cầu G giao đơn.
-- **Tiền điều kiện:** PREPARING; COD hoặc ONLINE đã PAID; chưa có vận đơn active.
-- **Luồng chính:** (1) kiểm tra địa chỉ/kiện/COD cần thu; (2) lưu shipment CREATED và job unique; (3) gửi yêu cầu G sau commit; (4) lưu mã vận đơn và hãng; (5) nhân viên bàn giao thực tế trước UC-26.
-- **Thay thế/lỗi:** timeout tra cứu theo request_key, không tạo vận đơn thứ hai; chế độ thủ công nhập hãng/mã unique và lý do; đơn hủy không được gửi. Phí phát sinh không tự sửa total đã chốt.
-- **Hậu điều kiện:** một shipment/đơn theo giả định một kiện; có mã vận đơn trước khi SHIPPING.
-- **Nghiệm thu:** gọi lặp không tạo hai vận đơn; tạo vận đơn không tự đánh dấu đã giao hoặc tiêu thụ tồn.
+- **Tác nhân/mục tiêu:** N/Q ghi nhận vận đơn thủ công để giao toàn bộ sản phẩm của đơn trong một kiện, một mã vận đơn; đã chốt ngày 14/10/2026.
+- **Tiền điều kiện:** PREPARING; COD hoặc ONLINE đã PAID; chưa có vận đơn cho đơn.
+- **Luồng chính:** (1) kiểm tra địa chỉ, toàn bộ sản phẩm và COD cần thu; (2) N/Q làm việc với hãng bên ngoài website hoặc dùng kịch bản demo ghi rõ; (3) nhập hãng, mã vận đơn và thông tin xác nhận; (4) kiểm tra quyền, mã trùng và trạng thái; (5) lưu vận đơn chuẩn bị cùng lịch sử; bàn giao ở UC-26.
+- **Thay thế/lỗi:** thiếu thông tin hoặc mã trùng không lưu; đơn hủy không được gửi; gửi lặp không tạo vận đơn thứ hai. Phí phát sinh không tự sửa total đã chốt. Không hỗ trợ chia đơn/giao từng phần. API tạo/query/hủy vận đơn là phần mở rộng, không thuộc luồng chính bản đồ án.
+- **Hậu điều kiện:** một kiện và một mã vận đơn cho mỗi đơn; có mã trước SHIPPING; lưu vận đơn không có nghĩa website đã gọi API hãng.
+- **Nghiệm thu:** gửi lặp không tạo hai vận đơn; tạo vận đơn không tự xuất kho hay đánh dấu đã giao; CUSTOMER không tạo vận đơn, dữ liệu demo được phân biệt với dữ liệu thực.
 
 ## UC-26 — Cập nhật kết quả vận chuyển
 
-- **Tác nhân/mục tiêu:** G gửi sự kiện; N/Q cập nhật trong chế độ thủ công.
-- **Tiền điều kiện:** shipment đã liên kết; G có chữ ký hợp lệ hoặc N/Q có phiên/CSRF; kích hoạt sự kiện trạng thái.
+Đã chốt ngày 14/10/2026: giao thất bại ghi lý do và có thể giao lại; không tự cộng kho. Chỉ cộng kho khi cửa hàng xác nhận đã nhận hàng trả về; nếu đã thu tiền thì ghi khoản cần hoàn, không tự đánh dấu đã hoàn. Bản đồ án cập nhật thủ công qua STAFF/ADMIN; callback hãng là phần mở rộng.
+
+- **Tác nhân/mục tiêu:** N/Q cập nhật thủ công trạng thái giao toàn bộ kiện; G là bên cung cấp thông tin ngoài website. Callback hãng chỉ thuộc phần mở rộng.
+- **Tiền điều kiện:** vận đơn đã liên kết; N/Q có phiên/CSRF hợp lệ và thông tin xác nhận trạng thái; không cập nhật giao từng phần.
 - **Luồng chính:** (1) xác thực nguồn/chống trùng; (2) kiểm tra thứ tự; (3) khi bàn giao chuyển shipment IN_TRANSIT và order SHIPPING, tiêu thụ reservation: giảm on_hand/reserved; (4) khi giao thành công chuyển DELIVERED; (5) lưu lịch sử/sự kiện.
 - **Thay thế/lỗi:** event cũ không lùi trạng thái; callback cho đơn hủy không mở lại đơn, tạo ngoại lệ; giao thất bại shipment FAILED, đơn vẫn SHIPPING để chờ giao lại hoặc xác nhận hàng về. RETURNED chỉ khi hàng thực nhận về: hoàn on_hand một lần, đơn DELIVERY_FAILED, tiền đã thu cần REFUND_PENDING.
 - **Hậu điều kiện:** không tự ghi PAID cho COD; hàng chưa về không cộng kho.
-- **Nghiệm thu:** repeated RETURNED không tăng kho hai lần; fake callback bị chặn; update thủ công có actor và bằng chứng.
+- **Nghiệm thu:** repeated RETURNED không tăng kho hai lần; cập nhật thủ công có actor và bằng chứng; người không có quyền bị chặn. Kiểm thử chữ ký callback hãng thuộc phần mở rộng API.
 
 ## UC-27 — Gửi/sửa đánh giá đã mua
+
+Đã chốt ngày 14/10/2026: khách đã nhận hàng được đánh giá mỗi dòng sản phẩm trong đơn một lần, gồm 1–5 sao và nhận xét; được sửa đánh giá của mình. ADMIN duyệt trước công khai; đánh giá sửa phải duyệt lại. “Một lần” nghĩa là một bản đánh giá có thể sửa, không tạo bản mới mỗi lần sửa.
 
 - **Tác nhân/mục tiêu:** K đánh giá dòng đơn đã nhận.
 - **Tiền điều kiện:** chủ đơn DELIVERED; kích hoạt Đánh giá từ dòng đơn.
@@ -256,6 +303,8 @@ Phiên bản 1.0 — 05/10/2026. Áp dụng giả định tại [chỉ mục](RE
 
 ## UC-28 — Kiểm duyệt đánh giá
 
+Đã chốt ngày 14/10/2026: ADMIN duyệt trước khi đánh giá được công khai; đánh giá đã sửa phải chờ duyệt lại.
+
 - **Tác nhân/mục tiêu:** ADMIN duyệt/ẩn nội dung.
 - **Tiền điều kiện:** đánh giá tồn tại; kích hoạt danh sách chờ duyệt.
 - **Luồng chính:** (1) xem nội dung và bằng chứng mua; (2) chọn APPROVED/HIDDEN/REJECTED; (3) nhập lý do khi ẩn/từ chối; (4) lưu và audit.
@@ -264,6 +313,8 @@ Phiên bản 1.0 — 05/10/2026. Áp dụng giả định tại [chỉ mục](RE
 - **Nghiệm thu:** ẩn làm mất khỏi public và điểm trung bình; audit xác định người duyệt.
 
 ## UC-29 — Quản lý khuyến mãi
+
+Đã chốt ngày 14/10/2026 về áp dụng mã: tối đa một mã mỗi đơn, không cộng dồn; chỉ giảm tiền hàng, không giảm phí giao; kiểm tra thời hạn, giá trị đơn tối thiểu và giới hạn lượt dùng. Đơn lưu mức giảm tại thời điểm mua; sửa chương trình không đổi đơn cũ. Loại mã, phạm vi sản phẩm và cơ chế giữ/trả lượt bên dưới vẫn là chi tiết thiết kế cần rà soát riêng.
 
 - **Tác nhân/mục tiêu:** ADMIN tạo/sửa/tắt mã giảm giá.
 - **Tiền điều kiện:** ADMIN; kích hoạt Khuyến mãi.
@@ -274,6 +325,8 @@ Phiên bản 1.0 — 05/10/2026. Áp dụng giả định tại [chỉ mục](RE
 
 ## UC-30 — Gửi/xem yêu cầu hỗ trợ
 
+Đã chốt: CUSTOMER tạo yêu cầu gắn với đơn của mình; chỉ xem trao đổi công khai. STAFF/ADMIN được xem và trả lời; ghi chú nội bộ không hiển thị cho khách. Luồng trạng thái chính: mới → đang xử lý → đã đóng (thiết kế mã OPEN → IN_PROGRESS → CLOSED). Mở lại trong 7 ngày bên dưới vẫn là đề xuất chưa chốt riêng.
+
 - **Tác nhân/mục tiêu:** K trao đổi vấn đề về đơn của mình.
 - **Tiền điều kiện:** có đơn thuộc K; kích hoạt Yêu cầu hỗ trợ.
 - **Luồng chính:** (1) chọn đơn, chủ đề/nội dung; (2) validate; (3) tạo ticket OPEN và tin đầu tiên; (4) xem trạng thái/trả lời; (5) gửi thêm tin hoặc mở lại ticket CLOSED trong 7 ngày.
@@ -283,6 +336,8 @@ Phiên bản 1.0 — 05/10/2026. Áp dụng giả định tại [chỉ mục](RE
 
 ## UC-31 — Xử lý hỗ trợ
 
+Đã chốt: STAFF/ADMIN xử lý yêu cầu hỗ trợ theo đơn, trả lời công khai hoặc ghi chú nội bộ; khách chỉ thấy tin công khai. Trạng thái chính mới → đang xử lý → đã đóng. Quyền mở lại, phân công người xử lý và các giới hạn chi tiết vẫn là thiết kế cần rà soát riêng.
+
 - **Tác nhân/mục tiêu:** N/Q giải quyết ticket.
 - **Tiền điều kiện:** ticket tồn tại; kích hoạt hàng đợi hỗ trợ.
 - **Luồng chính:** (1) lọc và nhận xử lý; (2) xem đơn; (3) trả lời công khai hoặc ghi chú nội bộ; (4) chuyển IN_PROGRESS/RESOLVED/CLOSED; (5) lưu lịch sử và actor.
@@ -291,6 +346,8 @@ Phiên bản 1.0 — 05/10/2026. Áp dụng giả định tại [chỉ mục](RE
 - **Nghiệm thu:** tin nội bộ chỉ N/Q thấy; đóng ticket không xóa hội thoại; K đọc được trả lời công khai.
 
 ## UC-32 — Báo cáo/xuất dữ liệu
+
+Đã chốt ngày 14/10/2026: doanh thu tiền hàng chỉ tính đơn đã giao và đã thanh toán, bằng tiền hàng trừ giảm giá, không gồm phí giao. Tiền thu, tiền hoàn và phí giao hiển thị riêng. Đơn hủy hoặc giao thất bại không tính vào doanh thu tiền hàng. Thời điểm phân kỳ báo cáo bên dưới là chi tiết thiết kế cần rà soát riêng; dữ liệu sandbox/demo phải được phân biệt với doanh thu thực.
 
 - **Tác nhân/mục tiêu:** ADMIN xem kết quả kinh doanh theo khoảng thời gian.
 - **Tiền điều kiện:** ADMIN; kích hoạt Báo cáo và chọn ngày theo Asia/Saigon.

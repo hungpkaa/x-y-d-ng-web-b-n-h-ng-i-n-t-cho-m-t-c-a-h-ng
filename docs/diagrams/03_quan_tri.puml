@@ -3,6 +3,7 @@ left to right direction
 actor "Quản trị viên ACT-03" as Q
 rectangle "Electro Store — quản trị" {
   usecase "UC-02,03,04\nĐăng nhập/xuất/hồ sơ" as I
+  usecase "UC-04-R Quên/đặt lại mật khẩu" as reset
   usecase "UC-06,07,14,15\nCatalog công khai" as C
   usecase "UC-05 Quản lý khách/nhân viên" as U05
   usecase "UC-08 Tạo bản nháp/SKU" as U08
@@ -23,6 +24,7 @@ rectangle "Electro Store — quản trị" {
   usecase "UC-34 Hoàn tiền thủ công" as U34
 }
 Q -- I
+Q -- reset
 Q -- C
 Q -- U05
 Q -- U08

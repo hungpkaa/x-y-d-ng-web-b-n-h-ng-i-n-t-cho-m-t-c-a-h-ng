@@ -1,0 +1,34 @@
+flowchart TD
+  A[Chọn SKU và thêm giỏ] --> B{Đăng nhập CUSTOMER?}
+  B -- Không --> C[Đăng nhập và gộp giỏ]
+  C --> D[Nhập nhận hàng, phương thức, mã giảm]
+  B -- Có --> D
+  D --> E[Server báo giá hàng, giảm, phí ship]
+  E --> F[Khách xác nhận request_key]
+  F --> G{Đã có key?}
+  G -- Cùng nội dung --> H[Trả đơn cũ]
+  G -- Khác nội dung --> I[Conflict]
+  G -- Chưa --> J{Giá, tồn, mã, địa chỉ còn hợp lệ?}
+  J -- Không --> K[Rollback hoặc báo giá lại, chưa tạo đơn]
+  J -- Có --> L[Giao dịch giữ tồn và lượt mã, tạo PENDING]
+  L --> M{COD hay VNPay sandbox?}
+  M -- COD --> N[N/Q xác nhận]
+  M -- ONLINE --> O[Tạo attempt và chuyển sang VNPay sandbox]
+  O --> P{Verified success trước hết hạn?}
+  P -- Có --> Q[PAID]
+  Q --> N
+  P -- Chưa --> R[Thử lại trong hạn hoặc chờ đối soát]
+  R --> X{Hết hạn và chưa thu?}
+  X -- Có --> Y[Hủy, giải phóng giữ tồn và lượt mã]
+  X -- Không --> O
+  N --> S[PREPARING: nhập hãng và mã vận đơn thủ công]
+  S --> T[Bàn giao: SHIPPING, tiêu thụ tồn giữ]
+  T --> U{Kết quả giao?}
+  U -- Thành công --> V[DELIVERED]
+  V --> W[COD đối soát riêng; ONLINE đã thu]
+  U -- Thất bại --> Z[Chờ giao lại hoặc nhận hàng về]
+  Z -- Giao lại --> T
+  Z -- Xác nhận đã nhận hàng về --> AA[RETURNED: cộng kho một lần, DELIVERY_FAILED]
+  AA --> AB{Đã thu tiền?}
+  AB -- Có --> AC[Ghi khoản cần hoàn, chưa tự đánh dấu đã hoàn]
+  AB -- Không --> AD[Kết thúc đơn giao thất bại]

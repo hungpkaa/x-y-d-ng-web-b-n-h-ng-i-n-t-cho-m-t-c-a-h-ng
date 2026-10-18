@@ -1,0 +1,19 @@
+sequenceDiagram
+  actor N as Nhân viên
+  participant W as Electro Store
+  participant D as CSDL
+  participant G as Nhà vận chuyển
+  actor Q as ADMIN
+  N->>G: Làm việc ngoài website để lấy mã vận đơn
+  G-->>N: Hãng và mã vận đơn
+  N->>W: Nhập hãng/mã thủ công cho PREPARING
+  W->>D: Kiểm tra quyền, lưu shipment và lịch sử
+  W->>D: READY
+  N->>W: Xác nhận bàn giao / IN_TRANSIT
+  W->>D: SHIPPING, giảm on_hand và reserved một lần
+  G-->>N: Thông tin giao thành công ngoài website
+  N->>W: Ghi nhận DELIVERED thủ công
+  W->>D: Đơn DELIVERED, COD vẫn UNPAID
+  Q->>W: Đối soát số tiền và chứng từ COD
+  W->>D: Payment SUCCEEDED, PAID, audit
+  W-->>Q: Xác nhận thu tiền

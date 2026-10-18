@@ -2,7 +2,7 @@
 left to right direction
 actor "Khách hàng ACT-01" as K
 actor "Cổng thanh toán ACT-04" as T
-rectangle "Electro Store — tích hợp thanh toán" {
+rectangle "Electro Store — VNPay sandbox" {
   usecase "UC-22 Tạo yêu cầu/thử lại thanh toán" as U22
   usecase "UC-23 Tiếp nhận kết quả thanh toán" as U23
   usecase "Xác thực chữ ký, tham chiếu, tiền" as validate

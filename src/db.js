@@ -2,7 +2,7 @@ const { DatabaseSync } = require('node:sqlite');
 const { mkdirSync } = require('node:fs');
 const { join, dirname, resolve } = require('node:path');
 const { scryptSync, randomBytes, timingSafeEqual } = require('node:crypto');
-const { migrate } = require('./migrations');
+const { migrate, CURRENT_SCHEMA_VERSION } = require('./migrations');
 
 function hashPassword(password) {
   const salt = randomBytes(16).toString('hex');
@@ -13,7 +13,7 @@ function verifyPassword(password, encoded) {
   const expected = Buffer.from(hash, 'hex');
   return expected.length === 64 && timingSafeEqual(expected, scryptSync(password, salt, 64));
 }
-function openDatabase(file, targetVersion = 8) {
+function openDatabase(file, targetVersion = CURRENT_SCHEMA_VERSION) {
   const db = new DatabaseSync(file);
   db.exec(`PRAGMA foreign_keys = ON;
     PRAGMA busy_timeout = 5000;
@@ -65,7 +65,7 @@ function defaultDatabase() {
     catch(error) {db.close();throw error;}
   }
   if (process.env.DB_PATH === ':memory:') {
-    const db = openDatabase(':memory:',10);
+    const db = openDatabase(':memory:');
     seed(db);
     return db;
   }
@@ -73,7 +73,7 @@ function defaultDatabase() {
   mkdirSync(directory, { recursive: true });
   const file=process.env.DB_PATH ? resolve(process.env.DB_PATH) : join(directory,'store.sqlite');
   mkdirSync(dirname(file),{recursive:true});
-  const db = openDatabase(file,10);
+  const db = openDatabase(file);
   seed(db);
   return db;
 }

@@ -16,6 +16,10 @@ function rateLimit(db,key,maximum,now=Date.now()) {
     return true;
   });
 }
+function isRateLimited(db,key,maximum,now=Date.now()) {
+  const row=db.prepare('SELECT count,expires_at FROM request_limits WHERE key_hash=?').get(hash(key));
+  return Boolean(row && row.expires_at>now && row.count>=maximum);
+}
 function issuePasswordReset(db,email,now=Date.now()) {
   return transaction(db,()=>{
     const user=typeof email==='string'?db.prepare("SELECT id,email,auth_version FROM users WHERE email=? AND status='ACTIVE'").get(email.trim().toLowerCase()):null;
@@ -144,4 +148,4 @@ function changeSupport(db,actor,id,input,now=Date.now()) {
     return {status:200,message:'Đã cập nhật yêu cầu hỗ trợ.'};
   });
 }
-module.exports={rateLimit,issuePasswordReset,resetPassword,addresses,saveAddress,changeAddress,listSupport,supportDetail,createSupport,replySupport,changeSupport};
+module.exports={rateLimit,isRateLimited,issuePasswordReset,resetPassword,addresses,saveAddress,changeAddress,listSupport,supportDetail,createSupport,replySupport,changeSupport};

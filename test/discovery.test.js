@@ -3,6 +3,7 @@ const assert=require('node:assert/strict');
 const {openDatabase}=require('../src/db');
 const {changeComparison,readComparison,comparisonTable}=require('../src/comparison');
 const {recommendProducts}=require('../src/recommendations');
+const {createOrder,transitionOrder}=require('../src/orders');
 function fixture() {
   const db=openDatabase(':memory:');
   db.exec("INSERT INTO users(id,name,email,password) VALUES(1,'Customer','c@test.com','test'); INSERT INTO categories(id,name,slug) VALUES(1,'Phone','phone'),(2,'Laptop','laptop'); INSERT INTO brands(id,name,slug) VALUES(1,'Alpha','alpha'),(2,'Beta','beta')");
@@ -18,6 +19,32 @@ function sale(db,productId,quantity,status) {
   const id=Number(db.prepare("INSERT INTO orders(user_id,recipient,phone,address,total,status) VALUES(1,'Customer','0901234567','Demo address',100,?)").run(status).lastInsertRowid);
   db.prepare("INSERT INTO order_items(order_id,product_id,variant_id,name,price,quantity) VALUES(?,?,?,'Snapshot',100,?)").run(id,productId,productId*10+1,quantity);
 }
+
+test('QD-14: giữ hết tồn bằng đơn thật loại sản phẩm khỏi gợi ý, hủy giải phóng giữ thì xuất hiện lại',()=>{
+  const db=fixture();
+  try {
+    const before=recommendProducts(db,{sourceId:1});
+    assert.ok(before.products.some(row=>row.id===2));
+    const id=createOrder(db,1,{'21':10},'Customer','0901234567','123 Example street');
+    assert.equal(typeof id,'number');
+    const held=recommendProducts(db,{sourceId:1});
+    assert.ok(!held.products.some(row=>row.id===2));
+    assert.ok(held.products.every(row=>row.id!==1&&row.stock>0&&row.reasons.length>0));
+    const stock={...db.prepare('SELECT on_hand,reserved FROM product_variants WHERE id=21').get()};
+    assert.deepEqual(stock,{on_hand:10,reserved:10});
+    const history=db.prepare('SELECT COUNT(*) n FROM order_history').get().n;
+    recommendProducts(db,{sourceId:1});recommendProducts(db);
+    assert.deepEqual({...db.prepare('SELECT on_hand,reserved FROM product_variants WHERE id=21').get()},stock);
+    assert.equal(db.prepare('SELECT COUNT(*) n FROM order_history').get().n,history);
+    const version=db.prepare('SELECT version FROM orders WHERE id=?').get(id).version;
+    assert.equal(transitionOrder(db,id,'CANCELLED',{id:1},{version,reason:'Customer cancelled before confirmation'}).status,200);
+    const restored=recommendProducts(db,{sourceId:1});
+    assert.deepEqual(restored.products.map(row=>row.id),before.products.map(row=>row.id));
+    const row=restored.products.find(row=>row.id===2);
+    assert.equal(row.stock,10);
+    assert.ok(row.reasons.includes('Cùng danh mục'));assert.ok(row.reasons.includes('Cùng thương hiệu'));
+  } finally {db.close();}
+});
 test('So sánh tối đa 3 SKU cùng danh mục, không trùng; bỏ một mục giữ các mục khác',()=>{
   const db=fixture();
   try {

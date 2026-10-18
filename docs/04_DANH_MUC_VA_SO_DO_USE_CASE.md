@@ -4,6 +4,8 @@ Phiên bản 1.0 — 05/10/2026. Mã UC dùng thống nhất trong [đặc tả]
 
 ## Danh mục
 
+Cập nhật nguồn sơ đồ: VNPay sandbox, vận chuyển thủ công; ACT-05 cung cấp thông tin ngoài website, chưa nối API trực tiếp. UC-04-R bổ sung quên/đặt lại mật khẩu vào nhóm tài khoản, không đánh số lại 34 UC chính. Nguồn PlantUML đã chỉnh; chưa render và kiểm tra hình cuối.
+
 Ký hiệu: K = CUSTOMER; V = vãng lai; N = STAFF; Q = ADMIN; T = cổng thanh toán; G = đơn vị vận chuyển. V/N/Q đều được xem catalog công khai. Các thao tác tài khoản chung chỉ thực hiện với phiên/tài khoản phù hợp.
 
 | Mã | Use case | Tác nhân |
@@ -12,6 +14,7 @@ Ký hiệu: K = CUSTOMER; V = vãng lai; N = STAFF; Q = ADMIN; T = cổng thanh 
 | UC-02 | Đăng nhập | V, K, N, Q khi chưa có phiên |
 | UC-03 | Đăng xuất | K, N, Q |
 | UC-04 | Cập nhật hồ sơ/mật khẩu | K, N, Q |
+| UC-04-R | Quên/đặt lại mật khẩu (bổ sung nhóm tài khoản) | Người có tài khoản K/N/Q chưa xác thực |
 | UC-05 | Quản lý tài khoản khách/nhân viên | Q |
 | UC-06 | Duyệt, tìm kiếm, lọc, sắp xếp sản phẩm | V, K, N, Q |
 | UC-07 | Xem chi tiết sản phẩm | V, K, N, Q |
@@ -32,8 +35,8 @@ Ký hiệu: K = CUSTOMER; V = vãng lai; N = STAFF; Q = ADMIN; T = cổng thanh 
 | UC-22 | Thanh toán trực tuyến/thử lại | K; T hỗ trợ |
 | UC-23 | Tiếp nhận kết quả thanh toán | T |
 | UC-24 | Xác nhận thu COD | Q |
-| UC-25 | Tạo vận đơn | N, Q; G hỗ trợ |
-| UC-26 | Cập nhật kết quả vận chuyển | G; N, Q trong chế độ thủ công |
+| UC-25 | Ghi nhận hãng/mã vận đơn thủ công | N, Q; G cung cấp thông tin ngoài website |
+| UC-26 | Cập nhật kết quả vận chuyển thủ công | N, Q; callback G thuộc mở rộng |
 | UC-27 | Gửi/sửa đánh giá đã mua | K |
 | UC-28 | Kiểm duyệt đánh giá | Q |
 | UC-29 | Quản lý khuyến mãi | Q |
@@ -62,7 +65,7 @@ Biên hệ thống là Electro Store. Đường nối tác nhân/use case biểu
 - UC-18 **include** kiểm tra giỏ và tính báo giá, giữ tồn và lưu đơn: luôn xảy ra khi xác nhận; server tính lại, không dùng giá trình duyệt.
 - Áp mã giảm giá **extend** UC-17 tại điểm tính báo giá, điều kiện khách nhập mã. Không bắt buộc đơn nào cũng có mã.
 - UC-22 không include UC-18: đơn được tạo trước, thanh toán có thể thất bại/thử lại. Quan hệ trước/sau nằm ở sơ đồ luồng.
-- UC-23 không include UC-26: kết quả thanh toán không đồng nghĩa giao hàng. Hai callback độc lập.
+- UC-23 không include UC-26: kết quả thanh toán không đồng nghĩa giao hàng. Bản chính dùng IPN VNPay và N/Q cập nhật giao thủ công; callback hãng thuộc mở rộng.
 - UC-27 không extend UC-07: đánh giá có mục tiêu riêng và điều kiện đã nhận hàng, không phải bước tùy chọn của mọi lần xem sản phẩm.
 - Đăng nhập là tiền điều kiện với các use case bảo vệ; không vẽ include đăng nhập vào mọi thao tác.
 - Thêm/sửa/ẩn không include lẫn nhau. Sơ đồ tổng quát nhóm các chức năng để dễ đọc; sơ đồ từng tác nhân dùng mã UC chi tiết.

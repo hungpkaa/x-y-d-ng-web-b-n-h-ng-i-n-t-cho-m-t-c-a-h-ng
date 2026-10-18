@@ -1,6 +1,7 @@
 const nodemailer=require('nodemailer');
 function mailConfig(env=process.env) {
   if(!env.SMTP_HOST||!env.SMTP_FROM||!env.APP_URL) return null;
+  if(Boolean(env.SMTP_USER)!==Boolean(env.SMTP_PASS)) throw new Error('SMTP_USER và SMTP_PASS cần được cấu hình cùng nhau.');
   const base=new URL(env.APP_URL),port=Number(env.SMTP_PORT||587);
   if(!['http:','https:'].includes(base.protocol)||base.username||base.password||!Number.isInteger(port)||port<1||port>65535) throw new Error('Cấu hình SMTP/APP_URL không hợp lệ.');
   if(env.NODE_ENV==='production'&&base.protocol!=='https:') throw new Error('APP_URL cần HTTPS khi production.');

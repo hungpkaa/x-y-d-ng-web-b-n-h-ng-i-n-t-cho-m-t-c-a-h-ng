@@ -1,0 +1,13 @@
+stateDiagram-v2
+  [*] --> PENDING: tạo đơn và giữ hàng
+  PENDING --> CONFIRMED: COD hoặc ONLINE đã thu
+  CONFIRMED --> PREPARING: chuẩn bị
+  PREPARING --> SHIPPING: bàn giao có vận đơn
+  SHIPPING --> DELIVERED: giao thành công
+  SHIPPING --> DELIVERY_FAILED: xác nhận hàng thực về
+  PENDING --> CANCELLED: hủy hoặc online quá hạn
+  CONFIRMED --> CANCELLED: N/Q hủy
+  PREPARING --> CANCELLED: N/Q hủy
+  DELIVERED --> [*]
+  DELIVERY_FAILED --> [*]
+  CANCELLED --> [*]

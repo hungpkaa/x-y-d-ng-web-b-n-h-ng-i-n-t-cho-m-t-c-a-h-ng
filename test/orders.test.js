@@ -1,9 +1,10 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { openDatabase, hashPassword, verifyPassword } = require('../src/db');
-const { createOrder, transitionOrder:transition,recordCodReceipt } = require('../src/orders');
+const { createOrder,recordCodReceipt } = require('../src/orders');
+const { advanceOrder } = require('../test-support/shipping');
 function transitionOrder(db,id,status,actorId) {
-  const result=transition(db,id,status,actorId,{version:db.prepare('SELECT version FROM orders WHERE id=?').get(id).version,reason:'Test operation'});
+  const result=advanceOrder(db,id,status,actorId,{version:db.prepare('SELECT version FROM orders WHERE id=?').get(id).version,reason:'Test operation'});
   if(result.status!==200) throw new Error(result.message);
   return result;
 }

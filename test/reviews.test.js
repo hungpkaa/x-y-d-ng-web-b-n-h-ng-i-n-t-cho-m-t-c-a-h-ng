@@ -1,7 +1,8 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const {openDatabase}=require('../src/db');
-const {createOrder,transitionOrder}=require('../src/orders');
+const {createOrder}=require('../src/orders');
+const {advanceOrder}=require('../test-support/shipping');
 const {saveReview,moderateReview,publicReviews}=require('../src/reviews');
 function fixture() {
   const db=openDatabase(':memory:');
@@ -12,7 +13,7 @@ function order(db,user=1,delivered=true) {
   const id=createOrder(db,user,{'1':1},'Customer','0901234567','123 Example street');
   if(delivered) for(const status of ['CONFIRMED','PREPARING','SHIPPING','DELIVERED']) {
     const version=db.prepare('SELECT version FROM orders WHERE id=?').get(id).version;
-    assert.equal(transitionOrder(db,id,status,3,{version:String(version),reason:'Delivery for review'}).status,200);
+    assert.equal(advanceOrder(db,id,status,3,{version:String(version),reason:'Delivery for review'}).status,200);
   }
   return db.prepare('SELECT id FROM order_items WHERE order_id=?').get(id).id;
 }

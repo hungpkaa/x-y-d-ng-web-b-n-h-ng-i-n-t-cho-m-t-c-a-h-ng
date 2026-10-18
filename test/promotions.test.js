@@ -2,8 +2,8 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const {openDatabase}=require('../src/db');
 const {issueCheckout,submitCheckout}=require('../src/checkout');
-const {transitionOrder}=require('../src/orders');
 const {promotionQuote}=require('../src/promotions');
+const {advanceOrder}=require('../test-support/shipping');
 function fixture(file=':memory:') {
   const db=openDatabase(file);
   db.exec("INSERT INTO users(id,name,email,password,role) VALUES(1,'One','one@test.com','test','CUSTOMER'),(2,'Two','two@test.com','test','CUSTOMER'),(3,'Staff','staff@test.com','test','STAFF'); INSERT INTO products(id,name,category,brand,description,price,stock) VALUES(1,'Phone','Phone','Demo','Demo',1000,10),(2,'Other','Phone','Demo','Demo',2000,10); INSERT INTO product_variants(id,product_id,sku,price,on_hand,active) VALUES(1,1,'PHONE',1000,10,1),(2,2,'OTHER',2000,10,1)");
@@ -11,7 +11,7 @@ function fixture(file=':memory:') {
   return db;
 }
 const submit=(db,key,user=1,cart={'1':1})=>submitCheckout(db,user,key,cart,'Customer','0901234567','123 Example street','LAST');
-const change=(db,id,status,actor=3)=>transitionOrder(db,id,status,actor,{version:String(db.prepare('SELECT version FROM orders WHERE id=?').get(id).version),reason:'Verified transition'});
+const change=(db,id,status,actor=3)=>advanceOrder(db,id,status,actor,{version:String(db.prepare('SELECT version FROM orders WHERE id=?').get(id).version),reason:'Verified transition'});
 test('Mã giảm giữ lượt khi đặt, retry không giữ thêm, hủy trả lượt một lần và bàn giao dùng lượt',()=>{
   const db=fixture();
   try {

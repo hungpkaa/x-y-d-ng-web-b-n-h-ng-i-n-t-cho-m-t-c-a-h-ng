@@ -1,0 +1,70 @@
+erDiagram
+  CATEGORIES o|--o{ CATEGORIES : parent
+  CATEGORIES ||--o{ PRODUCTS : contains
+  BRANDS ||--o{ PRODUCTS : brands
+  PRODUCTS ||--o{ PRODUCT_VARIANTS : offers
+  PRODUCTS ||--o{ PRODUCT_IMAGES : illustrates
+  CATEGORIES ||--o{ ATTRIBUTE_DEFINITIONS : defines
+  PRODUCT_VARIANTS ||--o{ VARIANT_ATTRIBUTE_VALUES : describes
+  ATTRIBUTE_DEFINITIONS ||--o{ VARIANT_ATTRIBUTE_VALUES : types
+  CATEGORIES {
+    integer id PK
+    integer parent_id FK
+    text name
+    text slug UK
+    boolean active
+  }
+  BRANDS {
+    integer id PK
+    text name
+    text slug UK
+    boolean active
+  }
+  PRODUCTS {
+    integer id PK
+    integer category_id FK
+    integer brand_id FK
+    text name
+    text description
+    integer warranty_months
+    text status
+    integer version
+  }
+  PRODUCT_VARIANTS {
+    integer id PK
+    integer product_id FK
+    text sku UK
+    text color
+    text configuration
+    integer price
+    integer on_hand
+    integer reserved
+    integer weight_grams
+    boolean active
+    integer version
+  }
+  PRODUCT_IMAGES {
+    integer id PK
+    integer product_id FK
+    text storage_key UK
+    text alt_text
+    integer sort_order
+  }
+  ATTRIBUTE_DEFINITIONS {
+    integer id PK
+    integer category_id FK
+    text code
+    text label
+    text data_type
+    text unit
+    boolean required
+    integer version
+  }
+  VARIANT_ATTRIBUTE_VALUES {
+    integer id PK
+    integer variant_id FK
+    integer attribute_id FK
+    text value_text
+    decimal value_number
+    boolean value_boolean
+  }

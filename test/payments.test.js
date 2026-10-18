@@ -2,9 +2,9 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const {openDatabase}=require('../src/db');
 const {issueCheckout,submitCheckout}=require('../src/checkout');
-const {transitionOrder}=require('../src/orders');
 const pay=require('../src/payments');
 const {salesReport}=require('../src/reporting');
+const {advanceOrder}=require('../test-support/shipping');
 const config={tmnCode:'TESTCODE',secret:'test-only-signing-key',returnUrl:'http://localhost/payments/vnpay/return',paymentUrl:'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html'};
 function fixture(file=':memory:') {
   const db=openDatabase(file);
@@ -19,10 +19,70 @@ function callback(payment,options={}) {
   const params={vnp_TmnCode:config.tmnCode,vnp_TxnRef:payment.reference,vnp_Amount:String(payment.amount*100),vnp_ResponseCode:'00',vnp_TransactionStatus:'00',vnp_TransactionNo:'123456789',vnp_PayDate:pay.vnpDate(Date.now()-1000),...options};
   return {...params,vnp_SecureHash:pay.signature(params,config.secret)};
 }
-const move=(db,id,status,actor=3)=>transitionOrder(db,id,status,actor,{version:String(db.prepare('SELECT version FROM orders WHERE id=?').get(id).version),reason:'Verified transition'});
+const move=(db,id,status,actor=3)=>advanceOrder(db,id,status,actor,{version:String(db.prepare('SELECT version FROM orders WHERE id=?').get(id).version),reason:'Verified transition'});
 function refundInput(db,id,payment) {
   return {version:String(db.prepare('SELECT version FROM orders WHERE id=?').get(id).version),amount:String(payment.amount),reference:'REFUND-'+payment.id,evidence_ref:'BANK-EVIDENCE-'+payment.id,note:'Confirmed external refund',occurred_at:new Date(Date.now()+7*3600000).toISOString().slice(0,19)};
 }
+
+test('CODE-05B: hạn 15 phút tính từ tạo đơn; thử lại sau thất bại không gia hạn; hết hạn đúng biên',t=>{
+  const db=fixture();
+  try {
+    const quoteTime=Date.now(),key=issueCheckout(db,1,{'1':1},'','ONLINE');
+    const created=quoteTime+60000;
+    t.mock.method(Date,'now',()=>created);
+    const result=submitCheckout(db,1,key,{'1':1},'Customer','0901234567','123 Example street','','ONLINE');
+    const first=db.prepare('SELECT * FROM payments WHERE order_id=?').get(result.id);
+    const deadline=created+15*60000;
+    assert.equal(first.expires_at,deadline);
+    assert.equal(db.prepare('SELECT payment_deadline FROM orders WHERE id=?').get(result.id).payment_deadline,deadline);
+    assert.equal(pay.processIpn(db,callback(first,{vnp_ResponseCode:'24',vnp_TransactionStatus:'02'}),config,created+1000).RspCode,'00');
+    assert.equal(pay.startPayment(db,{id:1},result.id,'127.0.0.1',config,created+10*60000).status,200);
+    const second=db.prepare('SELECT * FROM payments ORDER BY id DESC').get();
+    assert.notEqual(second.reference,first.reference);
+    assert.equal(second.expires_at,deadline);
+    assert.equal(pay.expirePayments(db,deadline-1),0);
+    assert.equal(pay.startPayment(db,{id:1},result.id,'127.0.0.1',config,deadline).status,409);
+    assert.equal(pay.expirePayments(db,deadline),1);
+    assert.equal(pay.expirePayments(db,deadline+1),0);
+    assert.equal(db.prepare('SELECT status,payment_status FROM orders').get().status,'CANCELLED');
+    assert.deepEqual({...db.prepare('SELECT on_hand,reserved FROM product_variants').get()},{on_hand:10,reserved:0});
+    assert.equal(db.prepare("SELECT COUNT(*) n FROM inventory_movements WHERE source_key LIKE 'cancelled:%'").get().n,1);
+  } finally {db.close();}
+});
+
+test('CODE-05B: IPN thành công sau hạn tự hủy/giải phóng giữ khi bộ quét chưa chạy; retry không hoàn kho lặp',()=>{
+  const db=fixture();
+  try {
+    const order=online(db),deadline=order.payment.expires_at;
+    assert.equal(db.prepare('SELECT reserved FROM product_variants').get().reserved,1);
+    const ipn=callback(order.payment,{vnp_PayDate:pay.vnpDate(deadline)});
+    assert.equal(pay.processIpn(db,ipn,config,deadline).RspCode,'00');
+    assert.equal(pay.processIpn(db,ipn,config,deadline+1000).RspCode,'02');
+    assert.equal(pay.expirePayments(db,deadline+1000),0);
+    const current=db.prepare('SELECT * FROM orders').get();
+    assert.equal(current.status,'CANCELLED');assert.equal(current.payment_status,'REFUND_PENDING');
+    assert.equal(current.recognition_at,null);
+    assert.deepEqual({...db.prepare('SELECT on_hand,reserved FROM product_variants').get()},{on_hand:10,reserved:0});
+    assert.equal(db.prepare("SELECT COUNT(*) n FROM inventory_movements WHERE source_key LIKE 'cancelled:%'").get().n,1);
+    assert.equal(db.prepare('SELECT COUNT(*) n FROM payment_events').get().n,1);
+    assert.equal(pay.refundDue(db,order.id).length,1);
+  } finally {db.close();}
+});
+
+test('CODE-05B: success sau khách hủy trước hạn chỉ ghi khoản cần hoàn, không mở lại đơn hoặc giữ kho',()=>{
+  const db=fixture();
+  try {
+    const order=online(db);
+    assert.equal(move(db,order.id,'CANCELLED',1).status,200);
+    assert.equal(pay.processIpn(db,callback(order.payment),config).RspCode,'00');
+    assert.equal(db.prepare('SELECT status FROM orders').get().status,'CANCELLED');
+    assert.equal(db.prepare('SELECT payment_status FROM orders').get().payment_status,'REFUND_PENDING');
+    assert.equal(move(db,order.id,'CONFIRMED',4).status,409);
+    assert.deepEqual({...db.prepare('SELECT on_hand,reserved FROM product_variants').get()},{on_hand:10,reserved:0});
+    assert.equal(pay.refundDue(db,order.id)[0].id,order.payment.id);
+    assert.equal(db.prepare('SELECT COUNT(*) n FROM refunds').get().n,0);
+  } finally {db.close();}
+});
 test('VNPay URL ký HMAC SHA512, tiền nhân 100, mốc giờ Việt Nam và POST retry giữ cùng attempt',()=>{
   const db=fixture();
   try {

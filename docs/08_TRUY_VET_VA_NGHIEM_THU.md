@@ -29,9 +29,9 @@ Kết quả triển khai mới nhất ngày 07/10/2026: 77 kiểm thử và smok
 |---|---|---|
 | AT-01 | Đăng ký với email đã tồn tại khác chữ hoa | Không tạo tài khoản thứ hai |
 | AT-02 | Đăng ký gửi role=ADMIN | Chỉ CUSTOMER được tạo |
-| AT-03 | ADMIN khóa user đang có phiên, user truy cập lại | Từ chối ngay; mở khóa vẫn phải đăng nhập lại |
+| AT-03 | ADMIN khóa/mở khóa CUSTOMER hoặc STAFF có nhiều phiên; thử thiếu lý do và truy cập bằng cookie cũ | Quy tắc đã chốt 14/10/2026: bắt buộc lý do; khóa chặn tất cả phiên ở lần truy cập tiếp theo; mở khóa phải đăng nhập lại; tài khoản/lịch sử đơn giữ nguyên. Đây là tiêu chí, chưa xác nhận đã chạy đạt trong bước tài liệu này |
 | AT-04 | STAFF gửi cập nhật giá/công bố bằng HTTP | 403; mọi trường không đổi |
-| AT-05 | STAFF tạo SKU nháp rồi ADMIN đặt giá/công bố | Nháp không public; đủ điều kiện mới public |
+| AT-05 | STAFF tạo nháp, nhập thông tin/ảnh/cấu hình/tồn; thử công bố/ẩn; ADMIN đặt giá và công bố | Nháp không public; STAFF không công bố/ẩn hoặc đặt giá; ADMIN công bố khi đủ thông tin, ảnh, thông số và ít nhất một SKU bật bán có mã riêng, giá > 0. Chưa chạy nghiệm thu trong bước tài liệu |
 | AT-06 | Hai người cập nhật cùng version SKU | Một thành công, người còn lại conflict |
 | AT-07 | K sửa địa chỉ, xem đơn cũ | Snapshot người nhận/địa chỉ giữ nguyên |
 | AT-08 | K đọc/hủy đơn, xem ticket K khác | 404, không lộ dữ liệu |
@@ -61,8 +61,80 @@ Kết quả triển khai mới nhất ngày 07/10/2026: 77 kiểm thử và smok
 | AT-32 | Hoàn tiền duplicate/amount vượt tiền thu | Không ghi hoàn hai lần/vượt số còn phải hoàn |
 | AT-33 | N đọc audit hoặc upload tệp giả ảnh | Bị chặn; không lưu/chạy tệp giả |
 | AT-34 | Restart server và đăng nhập tiếp | Phiên/giỏ lưu bền vững; có thể xem giao dịch cũ |
+| AT-35 | CUSTOMER thêm SKU, đăng xuất, đăng nhập lại cùng tài khoản; thay đổi giá/tồn trước đặt | Quy tắc chốt 14/10/2026: giỏ tài khoản còn nguyên; phiên cũ không truy cập được; giá/tồn được kiểm tra lại trước tạo đơn. Giỏ không giữ hàng; tài khoản khác không thấy giỏ này. Chưa chạy nghiệm thu trong bước tài liệu |
 
 ## 3. Kiểm tra chất lượng tài liệu
+
+### Ca bổ sung về hỗ trợ (đã chốt nghiệp vụ, chưa chạy nghiệm thu)
+
+| Mã | Thiết lập và hành động | Kết quả mong đợi |
+|---|---|---|
+| AT-56 | CUSTOMER tạo/xem yêu cầu gắn đơn của mình, rồi gửi ID đơn/yêu cầu của người khác | Chỉ thao tác trên dữ liệu của mình; không tạo yêu cầu cho đơn người khác hoặc lộ hội thoại |
+| AT-57 | STAFF/ADMIN trả lời công khai và thêm ghi chú nội bộ; khách đọc yêu cầu | Khách chỉ nhận tin công khai; nội dung nội bộ không có trong HTML/JSON gửi về khách; khách không tự tạo tin nội bộ |
+| AT-58 | STAFF/ADMIN xử lý yêu cầu mới đến đang xử lý rồi đóng | Lưu trạng thái và người thao tác, hiển thị trạng thái cho chủ yêu cầu; thao tác không có quyền bị chặn |
+
+
+### Ca bổ sung về gợi ý (đã chốt nghiệp vụ, chưa chạy nghiệm thu)
+
+| Mã | Thiết lập và hành động | Kết quả mong đợi |
+|---|---|---|
+| AT-53 | Xem sản phẩm khi có ứng viên công khai cùng danh mục/thương hiệu/giá gần và ứng viên nháp/ẩn/hết hàng | Ưu tiên theo tiêu chí đã chốt; loại sản phẩm đang xem và nháp/ẩn/hết hàng; mỗi kết quả có ít nhất một SKU còn bán được |
+| AT-54 | Gợi ý có lý do “Cùng thương hiệu” hoặc “Giá tương tự” | Lý do khớp dữ liệu và quy tắc xếp hạng đã thiết kế; không giả thông tin bán chạy hoặc quan hệ tương tự |
+| AT-55 | Không có ứng viên phù hợp | Hiển thị trạng thái rỗng hoặc gợi ý khác theo thiết kế rõ ràng; không lấp bằng hàng ẩn/hết tồn; không cần dịch vụ ML |
+
+
+### Ca bổ sung về so sánh (đã chốt nghiệp vụ, chưa chạy nghiệm thu)
+
+| Mã | Thiết lập và hành động | Kết quả mong đợi |
+|---|---|---|
+| AT-50 | Thêm 3 SKU cùng danh mục, rồi thêm SKU thứ tư hoặc khác danh mục | Giữ tối đa 3 SKU cùng danh mục; báo lỗi, không âm thầm thay SKU đã chọn |
+| AT-51 | So sánh SKU còn hàng với SKU hết hàng, sau đó ADMIN ẩn một SKU đã chọn | Hết hàng vẫn so sánh; SKU bị ẩn không xuất hiện khi đọc lại danh sách; không lộ dữ liệu nháp/ẩn |
+| AT-52 | So sánh giá/cấu hình/thông số có đơn vị, một giá trị khác và một giá trị thiếu | Hiển thị nhất quán; đánh dấu khác biệt; dữ liệu thiếu ghi “Chưa có thông tin”, không suy đoán giá trị |
+
+
+### Ca bổ sung về thông số (đã chốt nghiệp vụ, chưa chạy nghiệm thu)
+
+| Mã | Thiết lập và hành động | Kết quả mong đợi |
+|---|---|---|
+| AT-47 | STAFF tạo/sửa định nghĩa thông số; ADMIN tạo định nghĩa có kiểu, đơn vị và dấu bắt buộc | STAFF bị từ chối; ADMIN được quản lý; nhân viên chỉ nhập giá trị cho SKU |
+| AT-48 | Nhập giá trị sai kiểu hoặc định nghĩa thuộc danh mục khác vào SKU | Không lưu dữ liệu không hợp lệ; báo trường cần sửa; không công bố nếu thiếu thông số bắt buộc |
+| AT-49 | Hai SKU có thông số chuẩn và một trường tùy chọn chưa có giá trị | So sánh cùng tên/đơn vị; trường thiếu hiển thị chưa có thông tin, không biến thành 0 hoặc false |
+
+
+### Ca bổ sung về công bố (đã chốt nghiệp vụ, chưa chạy nghiệm thu)
+
+| Mã | Thiết lập và hành động | Kết quả mong đợi |
+|---|---|---|
+| AT-44 | ADMIN công bố sản phẩm thiếu lần lượt tên/danh mục/thương hiệu/mô tả/ảnh hợp lệ/thông số bắt buộc/SKU có mã và giá > 0 | Không công bố; thông báo dữ liệu cần bổ sung; sản phẩm vẫn nháp |
+| AT-45 | Công bố sản phẩm đủ dữ liệu nhưng mọi SKU bật bán có tồn khả dụng bằng 0 | Được công bố, hiển thị “Hết hàng”; gửi đặt mua trực tiếp cũng bị chặn, không tạo đơn/giữ hàng |
+| AT-46 | Sản phẩm có SKU A hết hàng, SKU B còn hàng | A không mua được; B mua được theo tồn khả dụng; không gán “Hết hàng” cho toàn sản phẩm khi B còn hàng |
+
+
+### Ca bổ sung về quên mật khẩu (đã chốt nghiệp vụ, chưa chạy nghiệm thu)
+
+| Mã | Thiết lập và hành động | Kết quả mong đợi |
+|---|---|---|
+| AT-41 | Yêu cầu reset cho email tồn tại và không tồn tại | Cùng thông báo công khai; email hợp lệ được gửi liên kết khi cấu hình SMTP; không lộ trạng thái tài khoản qua thông báo |
+| AT-42 | Dùng token hợp lệ, sai, đã dùng hoặc hết hạn 30 phút | Chỉ token hợp lệ còn hạn dùng được một lần; trường hợp còn lại không đổi mật khẩu |
+| AT-43 | Reset thành công khi có nhiều phiên, giỏ tài khoản và đơn cũ | Mọi phiên cũ mất hiệu lực, đăng nhập lại bằng mật khẩu mới; giỏ/lịch sử đơn giữ nguyên; lỗi giữa giao dịch rollback |
+
+
+### Ca bổ sung về đổi mật khẩu (đã chốt nghiệp vụ, chưa chạy nghiệm thu)
+
+| Mã | Thiết lập và hành động | Kết quả mong đợi |
+|---|---|---|
+| AT-39 | Người dùng đang có hai phiên, giỏ tài khoản và đơn cũ; đổi mật khẩu đúng mật khẩu hiện tại | Mọi phiên cũ mất hiệu lực, kể cả phiên đổi; đăng nhập lại bằng mật khẩu mới; mật khẩu cũ không đăng nhập được; giỏ tài khoản và lịch sử đơn giữ nguyên |
+| AT-40 | Đổi mật khẩu với mật khẩu hiện tại sai hoặc lỗi lưu giữa giao dịch | Không thay mật khẩu, không vô hiệu phiên do thao tác thất bại; giỏ/lịch sử đơn không thay đổi |
+
+
+### Ca bổ sung về gộp giỏ (đã chốt nghiệp vụ, chưa chạy nghiệm thu)
+
+| Mã | Thiết lập và hành động | Kết quả mong đợi |
+|---|---|---|
+| AT-36 | Giỏ tài khoản có SKU A số lượng 2, giỏ vãng lai có A số lượng 1 và B số lượng 1; đăng nhập CUSTOMER | A số lượng 3, B số lượng 1; giỏ cũ khác giữ nguyên; không giữ kho |
+| AT-37 | Tải trang hoặc gửi lại cùng yêu cầu gộp | Không cộng số lượng lần hai; lỗi giữa giao dịch không để giỏ bị gộp một phần |
+| AT-38 | Tổng số lượng gộp vượt tồn hoặc giới hạn | Báo mục cần điều chỉnh trước đặt; không âm thầm bỏ hàng, không tạo đơn vượt tồn/giới hạn |
+
 
 - Có đủ 5 tác nhân, trạng thái khách vãng lai tách khỏi CUSTOMER nhưng không thêm tác nhân kinh doanh ngoài phạm vi.
 - Mỗi mã UC có đúng một đặc tả, ít nhất một sơ đồ tác nhân liên quan và bảng dữ liệu hỗ trợ hoặc được giải thích là dữ liệu tạm/tính toán.
@@ -75,8 +147,8 @@ Kết quả triển khai mới nhất ngày 07/10/2026: 77 kiểm thử và smok
 
 | Nội dung | Thiết kế mặc định | Ảnh hưởng nếu thay |
 |---|---|---|
-| STAFF tạo nháp | Có; ADMIN đặt giá/công bố | UC-08,10,12, quyền và trạng thái SKU |
-| Tài khoản quản lý mua hàng | Dùng CUSTOMER riêng | UC-16..22 và ma trận quyền |
+| STAFF tạo nháp | Đã chốt 14/10/2026: nhập thông tin/ảnh/cấu hình/tồn; ADMIN đặt giá/công bố/ẩn | UC-08,10,12, quyền và trạng thái SKU |
+| Tài khoản quản lý mua hàng | Đã chốt 14/10/2026: dùng CUSTOMER riêng; STAFF/ADMIN chỉ thao tác quản lý | UC-16..22 và ma trận quyền |
 | Mốc khách hủy | Chỉ PENDING | UC-20, BR-06, trạng thái/ca AT-15 |
 | Hạn thanh toán | 15 phút cấu hình | UC-22, deadline/reservation/job hết hạn |
 | Thanh toán/vận chuyển | COD + một sandbox; một shipment/đơn | Adapter, event signatures, ERD payments/shipments |

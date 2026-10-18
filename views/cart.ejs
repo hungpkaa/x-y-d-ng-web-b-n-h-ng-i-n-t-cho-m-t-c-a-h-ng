@@ -1,0 +1,20 @@
+<h1>Giỏ hàng</h1>
+<% if(!items.length) { %>
+  <p>Giỏ hàng đang trống.</p><a class="button" href="/">Khám phá sản phẩm</a>
+<% } else { %>
+  <% items.forEach(item=>{ %>
+    <article class="row panel"><div>
+      <h2><%= item.name %></h2><p><%= item.sku %></p><p><%= item.color %> <%= item.configuration %></p>
+      <% if(item.unitPrice===null) { %><p>Sản phẩm không còn bán. Bạn có thể xóa khỏi giỏ.</p>
+      <% } else { %><p><%= money(item.price) %> · Còn <%= item.stock %></p><% } %>
+      <% if(item.needsAdjustment) { %><p role="status">Giỏ đã được gộp. Tổng mong muốn: <%= item.quantity %>. Hãy chọn lại số lượng từ 0 đến 99, phù hợp tồn kho.</p><% } %>
+      <% if(item.quantity>item.stock) { %><p>Số lượng vượt tồn kho hiện tại. Hãy điều chỉnh trước khi đặt.</p><% } %>
+    </div>
+    <form method="post" action="/cart"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="id" value="<%= item.id %>">
+      <% if(cartVersion!==null) { %><input type="hidden" name="cart_version" value="<%= cartVersion %>"><% } %>
+      <label>Số lượng (0 để xóa)<input type="number" name="quantity" min="0" max="99" value="<%= item.quantity %>" required></label><button>Cập nhật</button>
+    </form><strong><%= money(item.price*item.quantity) %></strong></article>
+  <% }) %>
+  <h2>Tổng tạm tính: <%= money(total) %></h2><p>Giá và tồn kho được kiểm tra lại khi đặt hàng.</p>
+  <a class="button" href="/checkout">Tiến hành đặt hàng</a>
+<% } %>

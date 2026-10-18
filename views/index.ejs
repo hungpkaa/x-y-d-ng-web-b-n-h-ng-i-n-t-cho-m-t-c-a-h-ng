@@ -1,12 +1,15 @@
 <!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Electro Store</title><link rel="stylesheet" href="/style.css"></head>
-<body><header><a class="logo" href="/">⚡ Electro Store</a><nav><a href="/compare">So sánh (<%= comparisonCount %>)</a><a href="/recommendations">Gợi ý</a><a href="/recent">Đã xem</a><a href="/">Sản phẩm</a><% if(!user || user.role==='CUSTOMER') { %><a href="/cart">Giỏ hàng (<%= cartCount %>)</a><% } %><% if(user) { %><% if(user.role==='CUSTOMER') { %><a href="/favorites">Yêu thích</a><a href="/notifications">Thông báo (<%= unreadNotifications %>)</a><a href="/support">Hỗ trợ</a><a href="/orders">Đơn của tôi</a><% } %><% if(user.role !== 'CUSTOMER') { %><a href="/admin/dashboard">Quản lý</a><% } %><a href="/profile"><%= user.name %></a><form method="post" action="/logout"><input type="hidden" name="_csrf" value="<%= csrf %>"><button class="secondary">Đăng xuất</button></form><% } else { %><a href="/login">Đăng nhập</a><a href="/register">Đăng ký</a><% } %></nav></header>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Electro Store</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/storefront.css"></head>
+<body><%- include('store-header') %>
 <% if(managementLayout) { %><div class="admin-layout"><%- include('admin-sidebar') %><% } %>
-<main><% if(notice) { %><p class="notice" role="status"><%= notice %></p><% } %>
+<main id="main-content"><% if(notice) { %><p class="notice" role="status"><%= notice %></p><% } %>
 <% if(page === 'catalog') { %>
-<section class="hero"><p>CÔNG NGHỆ CHO CUỘC SỐNG</p><h1>Tìm thiết bị phù hợp với bạn.</h1><p>Điện thoại, laptop và phụ kiện cho học tập, làm việc và giải trí.</p></section>
-<%- include('product-filters',{management:false}) %>
-<div class="grid"><% products.forEach(p=>{ %><article class="card"><div class="product-art"><% if(p.image_key) { %><img src="/media/<%= p.image_key %>" alt="<%= p.name %>" loading="lazy"><% } else { %><span aria-label="Chưa có ảnh">&#128241;</span><% } %></div><small><%= p.brand %> · <%= p.category %></small><h2><a href="/products/<%= p.id %>"><%= p.name %></a></h2><p><%= p.description %></p><strong class="price"><%= money(p.price) %></strong><p>Còn <%= p.stock %> sản phẩm</p><a class="button" href="/products/<%= p.id %>">Xem chi tiết</a></article><% }) %></div><% if(!products.length) { %><p>Không tìm thấy sản phẩm phù hợp.</p><% } %>
+<section class="hero"><div><p>KH?M PH? ? L?A CH?N ? K?T N?I</p><h1><%= store.title %></h1><p><%= store.subtitle %></p><a class="button hero-button" href="#catalog-products">Kh?m ph? s?n ph?m ?</a></div><div class="hero-visual" aria-hidden="true"><div class="hero-device">E<span>Electro Store</span></div><span class="hero-orbit">C?ng ngh?<br>trong t?m tay</span></div></section>
+<div class="benefit-grid"><div><strong>Ch?n ??ng thi?t b?</strong><span>Th?ng s? v? c?u h?nh r? r?ng</span></div><div><strong>So s?nh d? d?ng</strong><span>T?i ?a 3 c?u h?nh c?ng danh m?c</span></div><div><strong>Theo d?i ??n h?ng</strong><span>L?ch s? x? l? minh b?ch</span></div></div>
+<section id="catalog-products"><div class="section-heading"><div><small>THI?T B? D?NH CHO B?N</small><h2>Kh?m ph? s?n ph?m</h2></div><span><%= paging.total %> s?n ph?m</span></div>
+<details class="catalog-filter-panel" open><summary>B? l?c s?n ph?m</summary><%- include('product-filters',{management:false}) %></details>
+<div class="active-filters"><% [q,category,brand,min?'T? '+money(Number(min)):'',max?'??n '+money(Number(max)):''].filter(Boolean).forEach(f=>{ %><span><%= f %></span><% }) %><% if(q||category||brand||min||max) { %><a href="/">X?a b? l?c</a><% } %></div>
+<div class="grid catalog-grid"><% products.forEach(p=>{ %><%- include('product-card',{p}) %><% }) %></div><% if(!products.length) { %><div class="empty-state"><h3>Ch?a t?m th?y s?n ph?m ph? h?p</h3><p>Th? ??i t? kh?a ho?c gi?m s? b? l?c.</p><a class="button secondary" href="/">Xem t?t c? s?n ph?m</a></div><% } %></section>
 <%- include('pagination') %>
 <%- include('recommendation-cards') %>
 <% } else if(page === 'product') { %>
@@ -14,7 +17,7 @@
 <% } else if(page === 'login' || page === 'register') { %>
 <section class="panel narrow"><h1><%= page==='login' ? 'Đăng nhập' : 'Tạo tài khoản' %></h1><form method="post" action="/<%= page %>"><input type="hidden" name="_csrf" value="<%= csrf %>"><% if(page==='register') { %><label>Họ tên<input name="name" minlength="2" maxlength="80" autocomplete="name" required></label><% } %><label>Email<input type="email" name="email" maxlength="150" autocomplete="email" required></label><label>Mật khẩu<input type="password" name="password" minlength="<%= page==='register' ? 10 : 1 %>" maxlength="128" autocomplete="<%= page==='register' ? 'new-password' : 'current-password' %>" required></label><% if(page==='register') { %><small>Ít nhất 10 ký tự.</small><% } %><button><%= page==='login' ? 'Đăng nhập' : 'Đăng ký' %></button></form><% if(page==='login') { %><p><a href="/forgot-password">Quên mật khẩu?</a></p><% } %></section>
 <% } else if(page==='cart') { %>
-<h1>Giỏ hàng</h1><% if(!items.length) { %><p>Giỏ hàng đang trống.</p><a class="button" href="/">Khám phá sản phẩm</a><% } else { %><% items.forEach(item=>{ %><article class="row panel"><div><h2><%= item.name %></h2><p><%= item.sku %></p><p><%= item.color %> <%= item.configuration %></p><p><%= money(item.price) %> · Còn <%= item.stock %></p></div><form method="post" action="/cart"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="id" value="<%= item.id %>"><label>Số lượng (0 để xóa)<input type="number" name="quantity" min="0" max="99" value="<%= item.quantity %>" required></label><button>Cập nhật</button></form><strong><%= money(item.price*item.quantity) %></strong></article><% }) %><h2>Tổng: <%= money(total) %></h2><a class="button" href="/checkout">Tiến hành đặt hàng</a><% } %>
+<%- include('cart') %>
 <% } else if(page==='checkout') { %>
 <%- include('checkout') %>
 <% } else if(page==='orders') { %>
@@ -42,6 +45,8 @@
 <% } else if(page==='support-detail') { %><%- include('support-detail') %>
 <% } else if(page==='refunds') { %><%- include('refunds') %>
 <% } else if(page==='shipments') { %><%- include('shipments') %>
+<% } else if(page==='store-content') { %><%- include('store-content') %>
+<% } else if(page==='operations') { %><%- include('operations') %>
 <% } else if(page==='dashboard') { %><%- include('dashboard') %>
 <% } else if(page==='saved-products') { %><%- include('saved-products') %>
 <% } else if(page==='notifications') { %><%- include('notifications') %>

@@ -36,7 +36,11 @@ test('Reset từ chối token hết hạn, tài khoản khóa và thay đổi au
     assert.equal(services.resetPassword(db,reset.token,input,now).status,400);
     db.exec("UPDATE users SET status='ACTIVE',auth_version=auth_version+1 WHERE id=1");
     assert.equal(services.resetPassword(db,reset.token,input,now).status,400);
+    assert.equal(services.isRateLimited(db,'ip:private',2,now),false);
     assert.equal(services.rateLimit(db,'ip:private',2,now),true);assert.equal(services.rateLimit(db,'ip:private',2,now),true);assert.equal(services.rateLimit(db,'ip:private',2,now),false);
+    assert.equal(services.isRateLimited(db,'ip:private',2,now),true);
+    assert.equal(services.isRateLimited(db,'ip:private',2,now),true); // Reading does not add an attempt.
+    assert.equal(services.isRateLimited(db,'ip:private',2,now+15*60000),false);
     assert.equal(services.rateLimit(db,'ip:private',2,now+15*60000),true);
     assert.doesNotMatch(JSON.stringify(db.prepare('SELECT * FROM request_limits').all()),/private/);
   } finally {db.close();}

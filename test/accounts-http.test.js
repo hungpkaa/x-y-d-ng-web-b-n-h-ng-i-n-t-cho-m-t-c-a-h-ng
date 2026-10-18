@@ -128,7 +128,8 @@ test('HTTP hồ sơ, tạo nhân viên, quyền, hủy đơn, khóa/mở khóa v
     await post('/profile/password',first,{version:'4',current_password:password,new_password:newPassword,confirm_password:newPassword});
     assert.equal((await request('/profile',second)).headers.get('location'),'/login');
     assert.equal((await login('3@test.com',password)).logged.headers.get('location'),'/login');
-    assert.equal((await login('3@test.com',newPassword)).logged.headers.get('location'),'/');
+    const relogin=(await login('3@test.com',newPassword)).logged;
+    assert.equal(relogin.headers.get('location'),'/',`Login response: ${relogin.status} ${await relogin.clone().text()}`);
   } finally {
     if(child.exitCode===null) await new Promise(resolve=>{child.once('exit',resolve);child.kill();});
   }

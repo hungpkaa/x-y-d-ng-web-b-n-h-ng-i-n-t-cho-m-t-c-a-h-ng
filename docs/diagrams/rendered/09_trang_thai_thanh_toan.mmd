@@ -1,0 +1,11 @@
+stateDiagram-v2
+  [*] --> UNPAID
+  UNPAID --> PENDING: khởi tạo
+  PENDING --> UNPAID: chưa thu
+  PENDING --> PAID: thành công hợp lệ
+  UNPAID --> PAID: ADMIN xác nhận COD
+  PAID --> REFUND_PENDING: hủy / hàng trả về
+  PENDING --> REFUND_PENDING: success muộn sau hủy
+  UNPAID --> REFUND_PENDING: success muộn sau hủy
+  REFUND_PENDING --> REFUNDED: hoàn đủ có bằng chứng
+  REFUNDED --> [*]

@@ -6,6 +6,7 @@ rectangle "Electro Store — nhân viên" {
   usecase "UC-02 Đăng nhập" as U02
   usecase "UC-03 Đăng xuất" as U03
   usecase "UC-04 Hồ sơ/mật khẩu" as U04
+  usecase "UC-04-R Quên/đặt lại mật khẩu" as reset
   usecase "UC-06,07,14,15\nXem catalog công khai" as C
   usecase "UC-08 Tạo bản nháp/SKU" as U08
   usecase "UC-09 Thông tin/ảnh/thông số" as U09
@@ -18,6 +19,7 @@ rectangle "Electro Store — nhân viên" {
 N -- U02
 N -- U03
 N -- U04
+N -- reset
 N -- C
 N -- U08
 N -- U09
@@ -26,7 +28,10 @@ N -- U21
 N -- U25
 N -- U26
 N -- U31
-G -- U25
+note right of G
+Trao đổi với nhân viên ngoài website.
+Không có API hãng ở bản chính.
+end note
 note bottom of U08
 Không nhập/sửa giá hoặc công bố sản phẩm.
 Bản nháp chờ ADMIN thiết lập giá.

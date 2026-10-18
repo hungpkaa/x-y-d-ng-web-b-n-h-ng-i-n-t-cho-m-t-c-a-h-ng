@@ -1,0 +1,64 @@
+erDiagram
+  USERS ||--o{ ADDRESSES : owns
+  USERS o|--o{ SESSIONS : authenticates
+  USERS ||--o| CARTS : owns
+  USERS ||--o{ PASSWORD_RESET_TOKENS : requests
+  CARTS ||--o{ CART_MERGES : receives
+  CARTS ||--o{ CART_ITEMS : contains
+  PRODUCT_VARIANTS ||--o{ CART_ITEMS : selected
+  USERS {
+    integer id PK
+    text email UK
+    text password_hash
+    text name
+    text phone
+    text role
+    text status
+    integer auth_version
+  }
+  ADDRESSES {
+    integer id PK
+    integer user_id FK
+    text recipient
+    text phone
+    text address
+    text area_code
+  }
+  SESSIONS {
+    text sid PK
+    integer user_id FK
+    integer auth_version
+    text expires_at
+    text data_json
+  }
+  CARTS {
+    integer id PK
+    integer user_id FK,UK
+    integer version
+  }
+  CART_ITEMS {
+    integer id PK
+    integer cart_id FK
+    integer variant_id FK
+    integer quantity
+  }
+  PASSWORD_RESET_TOKENS {
+    integer id PK
+    integer user_id FK
+    text token_hash UK
+    integer auth_version
+    text expires_at
+    text used_at
+    text created_at
+  }
+  CART_MERGES {
+    integer id PK
+    integer cart_id FK
+    text source_key UK
+    text source_items_json
+    text result_json
+    text merged_at
+  }
+  PRODUCT_VARIANTS {
+    integer id PK
+  }

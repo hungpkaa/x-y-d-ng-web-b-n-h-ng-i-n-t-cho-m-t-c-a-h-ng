@@ -36,7 +36,11 @@ Q -- shipping
 Q -- admin
 Q -- finance
 T -- payment
-G -- shipping
+note right of G
+Nguồn thông tin ngoài website.
+N/Q nhập vận chuyển thủ công.
+API hãng thuộc phần mở rộng.
+end note
 note bottom of product
 STAFF: bản nháp, thông tin, tồn kho.
 Chỉ ADMIN: giá, công bố/ẩn, danh mục/thương hiệu.
@@ -44,5 +48,6 @@ end note
 note bottom of identity
 Đăng ký chỉ dành cho khách vãng lai.
 Nhân viên/quản trị không tự đăng ký quyền.
+Bao gồm UC-04-R: quên/đặt lại mật khẩu.
 end note
 @enduml

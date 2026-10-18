@@ -2,10 +2,11 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const {openDatabase,hashPassword,verifyPassword}=require('../src/db');
 const {saveProfile,changePassword,createStaff,saveStaff,setAccountStatus}=require('../src/accounts');
-const {createOrder,transitionOrder,recordCodReceipt}=require('../src/orders');
+const {createOrder,recordCodReceipt}=require('../src/orders');
 const {issueCheckout,submitCheckout}=require('../src/checkout');
 const {saveShippingPolicy}=require('../src/shipping');
 const {listRecords}=require('../src/management-list');
+const {advanceOrder}=require('../test-support/shipping');
 const admin={id:1,role:'ADMIN'},staff={id:2,role:'STAFF'},customer={id:3,role:'CUSTOMER'};
 function fixture() {
   const db=openDatabase(':memory:');
@@ -18,7 +19,7 @@ function fixture() {
 const user=(db,id)=>db.prepare('SELECT * FROM users WHERE id=?').get(id);
 const order=(db,id)=>db.prepare('SELECT * FROM orders WHERE id=?').get(id);
 const makeOrder=(db,id=3)=>createOrder(db,id,{'1':1},'Old recipient','0901234567','Original address');
-const move=(db,id,status,actor=staff,version=order(db,id).version)=>transitionOrder(db,id,status,actor,{version,reason:'Confirmed request'});
+const move=(db,id,status,actor=staff,version=order(db,id).version)=>advanceOrder(db,id,status,actor,{version,reason:'Confirmed request'});
 test('Hồ sơ chỉ sửa chính mình, email/quyền bất biến; mật khẩu cần mật khẩu cũ và vô hiệu phiên, audit không chứa mật khẩu',()=>{
   const db=fixture();
   try {

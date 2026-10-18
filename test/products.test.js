@@ -2,9 +2,10 @@ const { test }=require('node:test');
 const assert=require('node:assert/strict');
 const { openDatabase }=require('../src/db');
 const { saveProduct,saveVariant,priceVariant,adjustStock,publishProduct }=require('../src/products');
-const { createOrder,transitionOrder:transition }=require('../src/orders');
+const { createOrder }=require('../src/orders');
+const { advanceOrder }=require('../test-support/shipping');
 function transitionOrder(db,id,status,actorId) {
-  const result=transition(db,id,status,actorId,{version:db.prepare('SELECT version FROM orders WHERE id=?').get(id).version,reason:'Test operation'});
+  const result=advanceOrder(db,id,status,actorId,{version:db.prepare('SELECT version FROM orders WHERE id=?').get(id).version,reason:'Test operation'});
   if(result.status!==200) throw new Error(result.message);
   return result;
 }

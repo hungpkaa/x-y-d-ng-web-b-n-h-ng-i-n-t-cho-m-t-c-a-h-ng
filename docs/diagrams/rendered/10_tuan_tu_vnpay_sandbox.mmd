@@ -1,0 +1,21 @@
+sequenceDiagram
+  actor K as Khách hàng
+  participant W as Electro Store
+  participant D as CSDL
+  participant T as VNPay sandbox
+  K->>W: Xác nhận đơn ONLINE của mình
+  W->>D: Kiểm tra báo giá/key, tạo đơn và giữ hàng nguyên tử
+  W->>D: Lưu attempt, tham chiếu và hạn từ lúc tạo đơn
+  W-->>K: URL thanh toán do server ký
+  K->>T: Mở URL và thanh toán thử nghiệm
+  T->>W: IPN có chữ ký
+  W->>W: Xác minh chữ ký, merchant, tham chiếu, số tiền
+  alt Kết quả không hợp lệ
+    W-->>T: Phản hồi từ chối, không thay tiền
+  else Kết quả hợp lệ
+    W->>D: Khóa attempt/đơn, chống lặp, lưu kết quả và commit
+    W-->>T: Phản hồi kết quả xử lý
+  end
+  K->>W: Quay lại xem đơn của mình
+  W->>D: Đọc trạng thái đã lưu
+  W-->>K: Trạng thái hoặc đang xác minh

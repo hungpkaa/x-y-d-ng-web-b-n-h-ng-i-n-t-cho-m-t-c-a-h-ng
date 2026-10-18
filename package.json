@@ -11,6 +11,7 @@
     "dev": "node --env-file-if-exists=.env --watch src/server.js",
     "test": "node --test",
     "test:smoke": "node scripts/smoke.js",
+    "integrations:check:sample": "node scripts/check-integrations.js --sample",
     "db:check": "node --env-file-if-exists=.env scripts/check-postgres.js",
     "db:backup": "node --env-file-if-exists=.env scripts/backup-postgres.js",
     "db:import": "node --env-file-if-exists=.env scripts/import-sqlite-to-postgres.js",

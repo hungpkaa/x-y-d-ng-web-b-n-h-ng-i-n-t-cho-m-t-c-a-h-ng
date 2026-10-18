@@ -1,0 +1,13 @@
+stateDiagram-v2
+  [*] --> CREATED
+  CREATED --> READY: nhận mã vận đơn
+  READY --> IN_TRANSIT: bàn giao
+  IN_TRANSIT --> DELIVERED: giao thành công
+  IN_TRANSIT --> FAILED: giao thất bại
+  FAILED --> IN_TRANSIT: giao lại
+  FAILED --> RETURNED: hàng thực về
+  CREATED --> CANCELLED: hủy trước bàn giao
+  READY --> CANCELLED: hủy trước bàn giao
+  DELIVERED --> [*]
+  RETURNED --> [*]
+  CANCELLED --> [*]
