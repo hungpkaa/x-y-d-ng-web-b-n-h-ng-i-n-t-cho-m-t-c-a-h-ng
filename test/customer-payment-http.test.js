@@ -112,6 +112,10 @@ test('HTTP địa chỉ, hỗ trợ/nội bộ, SMTP giả, vô hiệu phiên, V
     const bankUrl=bankPlaced.headers.get('location');assert.match(bankUrl,/^\/orders\/\d+$/);
     assert.equal((await request(bankUrl,other)).status,404);
     const bankPage=await (await request(bankUrl,customer)).text();assert.match(bankPage,/4801021854/);assert.match(bankPage,/VUTIENHUNG/);assert.match(bankPage,/DH\d+/);
+    for(const who of [customer,staff,other]) assert.equal((await request('/admin/bank-transfers',who)).status,403);
+    assert.equal((await request('/admin/bank-transfers')).status,403);
+    const pendingBankList=await request('/admin/bank-transfers',admin);assert.equal(pendingBankList.status,200);
+    assert.match(await pendingBankList.text(),new RegExp('DH'+bankUrl.split('/').pop()));
     const invoice=await request(bankUrl+'/invoice',customer);assert.equal(invoice.status,200);assert.equal(invoice.headers.get('cache-control'),'no-store');
     const invoiceHtml=await invoice.text();assert.match(invoiceHtml,/Phiếu đơn hàng/);assert.match(invoiceHtml,/Bank Buyer/);assert.match(invoiceHtml,/Chờ xác nhận thanh toán/);
     assert.equal((await request(bankUrl+'/invoice',other)).status,404);
@@ -122,6 +126,8 @@ test('HTTP địa chỉ, hỗ trợ/nội bộ, SMTP giả, vô hiệu phiên, V
     assert.equal((await post(bankRoute,staff,bankBody)).status,403);
     assert.equal((await post(bankRoute,admin,bankBody)).status,302);
     assert.match(await (await request(bankUrl,customer)).text(),/Đã xác nhận đủ tiền/);
+    const afterBankList=await (await request('/admin/bank-transfers?state=RECORDED',admin)).text();
+    assert.match(afterBankList,new RegExp('DH'+bankUrl.split('/').pop()));
     assert.equal((await post('/checkout',customer,{token:bankToken,method:'BANK_TRANSFER',recipient:'Bank Buyer',phone:'0901234567',address:'123 Bank delivery street'})).headers.get('location'),bankUrl);
     const goPay=await post(orderUrl+'/pay',customer);
     const gateway=new URL(goPay.headers.get('location'));assert.equal(gateway.host,'sandbox.vnpayment.vn');

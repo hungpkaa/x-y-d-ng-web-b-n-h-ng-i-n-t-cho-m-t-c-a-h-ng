@@ -64,4 +64,15 @@ function confirmBankTransfer(db,actor,orderId,input,now=Date.now()) {
     return {status:200,paymentId,replayed:false,message:cancelled?'Đã ghi khoản thu cần hoàn; đơn đã hủy không mở lại.':'Đã đối soát đủ tiền chuyển khoản.'};
   });
 }
-module.exports={HOLD_MS,prepareBankTransferWork,expireBankTransfers,confirmBankTransfer};
+function listBankTransfers(db,actor,query={}) {
+  actorUser(db,actor,['ADMIN']);
+  const state=query.state??'WAITING',q=query.q??'',page=query.page??'1';
+  if(!['WAITING','RECORDED','ALL'].includes(state)||typeof q!=='string'||q.length>100||typeof page!=='string'||!/^\d+$/.test(page)||!Number.isSafeInteger(Number(page))||Number(page)<1) return {status:400,message:'Bộ lọc đối soát không hợp lệ.'};
+  const condition="FROM bank_transfer_orders b JOIN orders o ON o.id=b.order_id WHERE o.payment_method='BANK_TRANSFER' AND (?='ALL' OR (?='WAITING' AND o.payment_status IN ('UNPAID','PENDING')) OR (?='RECORDED' AND o.payment_status IN ('PAID','REFUND_PENDING','REFUNDED'))) AND (?='' OR CAST(o.id AS TEXT)=? OR instr(lower(b.transfer_reference),lower(?))>0)";
+  const args=[state,state,state,q,q,q];
+  const total=db.prepare('SELECT COUNT(*) n '+condition).get(...args).n;
+  const paging=require('./product-list').pagination(total,page,20,'/admin/bank-transfers',{state,q});
+  const rows=db.prepare('SELECT o.id,o.recipient,o.status,o.payment_status,o.version,b.amount,b.transfer_reference,b.expires_at,b.created_at '+condition+' ORDER BY b.expires_at,o.id LIMIT ? OFFSET ?').all(...args,paging.size,paging.offset);
+  return {status:200,rows,paging,filters:{state,q}};
+}
+module.exports={HOLD_MS,prepareBankTransferWork,expireBankTransfers,confirmBankTransfer,listBankTransfers};

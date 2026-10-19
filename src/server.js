@@ -512,6 +512,11 @@ app.post('/admin/orders/:id/status',staff,(req,res) => {
   try { productResult(req,res,transitionOrder(db,Number(req.params.id),req.body.status,req.user,req.body),`/orders/${req.params.id}`); }
   catch(error) { flash(req,res,error.message,'/admin/orders'); }
 });
+app.get('/admin/bank-transfers',admin,(req,res)=>{
+  const result=bankTransfers.listBankTransfers(db,req.user,req.query);
+  if(result.status!==200) return res.status(result.status).send(result.message);
+  res.set('Cache-Control','no-store');render(res,'bank-transfers',result);
+});
 app.post('/admin/orders/:id/bank-transfer',admin,(req,res)=>productResult(req,res,bankTransfers.confirmBankTransfer(db,req.user,Number(req.params.id),req.body),`/orders/${req.params.id}`));
 app.post('/admin/orders/:id/cod',admin,(req,res)=>productResult(req,res,recordCodReceipt(db,Number(req.params.id),req.user,req.body),`/orders/${req.params.id}`));
 app.post('/admin/products',staff,(req,res) => {

@@ -1,4 +1,4 @@
-<% if(bankTransfer) { %><section class="panel bank-transfer-panel"><h2>Chuyển khoản ngân hàng</h2>
+<% if(bankTransfer) { %><section id="bank-transfer" class="panel bank-transfer-panel"><h2>Chuyển khoản ngân hàng</h2>
 <% if(order.status==='PENDING'&&['PENDING','UNPAID'].includes(order.payment_status)&&bankTransfer.expires_at>Date.now()) { %>
 <p class="checkout-payment-note">Chờ cửa hàng xác nhận tiền trước <strong><%= new Date(bankTransfer.expires_at).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'}) %></strong> (giờ Việt Nam). Quét QR không tự xác nhận thanh toán.</p>
 <% if(bankQrAvailable&&bankTransfer.bank_code==='BIDV'&&bankTransfer.account_number==='4801021854') { %><img class="bank-transfer-qr" src="/images/payments/bidv-4801021854.png" alt="QR tài khoản nhận tiền BIDV 4801021854"><p class="auth-hint">Đối chiếu người nhận trong ứng dụng ngân hàng. Với QR tĩnh, nhập đúng số tiền và nội dung bên dưới.</p><% } else { %><p class="auth-hint">Chưa có ảnh QR đã đối chiếu. Bạn có thể dùng thông tin chuyển khoản bên dưới.</p><% } %>

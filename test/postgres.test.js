@@ -27,6 +27,7 @@ test('PostgreSQL: bank transfer snapshot and 30-minute expiry release stock once
   const id=submitCheckout(db,user,token,{'1':1},'Customer','0901234567','123 Example street','','BANK_TRANSFER').id;
   assert.ok(Number.isSafeInteger(id));
   assert.equal(db.prepare('SELECT payment_method FROM orders WHERE id=?').get(id).payment_method,'BANK_TRANSFER');
+  assert.equal(bank.listBankTransfers(db,{id:admin},{q:'DH'+id}).rows.length,1);
   const row=db.prepare('SELECT * FROM bank_transfer_orders WHERE order_id=?').get(id);
   assert.ok(row.expires_at>=now+1800000&&row.expires_at<=Date.now()+1800000);
   assert.equal(bank.expireBankTransfers(db,row.expires_at-1),0);
@@ -38,6 +39,7 @@ test('PostgreSQL: bank transfer snapshot and 30-minute expiry release stock once
   assert.equal(result.status,200);
   assert.equal(db.prepare('SELECT payment_status FROM orders WHERE id=?').get(id).payment_status,'REFUND_PENDING');
   assert.equal(pay.refundDue(db,id).length,1);
+  assert.equal(bank.listBankTransfers(db,{id:admin},{state:'RECORDED',q:'DH'+id}).rows.length,1);
   const day=new Date(received+25200000).toISOString().slice(0,10);
   assert.equal(salesReport(db,{from:day,to:day}).summary.bankCash,row.amount);
 });
