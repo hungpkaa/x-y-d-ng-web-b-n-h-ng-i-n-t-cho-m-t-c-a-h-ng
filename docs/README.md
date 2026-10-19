@@ -186,6 +186,10 @@ Phạm vi thanh toán đã chốt: COD và VNPay sandbox, chưa giao dịch ti�
 
 Phí giao cố định, khuyến mãi, đánh giá và doanh thu đã chốt. Các quy tắc hủy đã được đánh dấu trong UC-20/21 và BR-06. ERD và nghiệm thu còn các tham chiếu biểu phí nâng cao cần được đánh dấu là mở rộng khi rà soát các phần đó; chưa thay đổi mã nguồn.
 
+## Dữ liệu sản phẩm bổ sung
+
+[48 — Danh mục sản phẩm mẫu và ảnh chi tiết](48_DU_LIEU_SAN_PHAM_MAU.md): nguồn dữ liệu, cách nhập lại và giới hạn giá/tồn mẫu.
+
 ## Tài liệu cũ
 
 [02](02_DAC_TA_SAN_PHAM_VA_LO_TRINH.md) ghi nhận bản sửa quyền giá và lộ trình; [03](03_ERD_DE_XUAT.md) là ERD sơ bộ. Chúng được giữ làm lịch sử và dẫn sang bộ đặc tả mới, không dùng thay thế tài liệu mục tiêu. Báo cáo ở thư mục gốc ngày 02/10/2026 mô tả thời điểm chưa có mã nguồn.

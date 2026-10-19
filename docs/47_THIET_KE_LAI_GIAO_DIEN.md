@@ -26,6 +26,13 @@ Cập nhật trang danh mục: thêm `category-presentation.js` và `category-la
 Gmail vẫn tạm hoãn. Không thay luật thanh toán, quyền, dữ liệu cửa hàng, thông tin nhận tiền hoặc triển khai web trong bước thiết kế.
 # Bổ sung giao diện chi tiết sản phẩm và thanh toán
 
+## Xem ảnh lớn
+
+- Thư viện ảnh có bộ đếm, nút trước/sau, ảnh thu nhỏ đánh dấu ảnh hiện tại và cửa sổ xem ảnh lớn dùng `dialog`.
+- Hỗ trợ phím trái/phải, Esc, vuốt ngang; đóng cửa sổ trả tiêu điểm về nút mở. Một ảnh sẽ vô hiệu nút chuyển.
+- Khi JavaScript không hoạt động hoặc trình duyệt chưa hỗ trợ dialog, ảnh đại diện vẫn hiển thị, nút mở không xuất hiện.
+- Đã kiểm tra cú pháp JavaScript, kiểm thử HTTP discovery và smoke test; xác minh trang sản phẩm có thư viện ảnh qua HTTP. Chưa kiểm tra trực quan thao tác chuột/chạm trong môi trường hiện tại.
+
 - Trang sản phẩm: bố cục ảnh và thông tin hai cột trên màn hình lớn, một cột trên điện thoại; hiển thị giá, tồn kho và mã của cấu hình đang chọn. Nút mua dẫn tới đúng cấu hình và biểu mẫu thêm giỏ hiện có.
 - Giỏ hàng, thanh toán, chi tiết đơn có chỉ dẫn ba bước mua hàng; bước hiện tại không đồng nghĩa đã thanh toán.
 - Trang thanh toán có các ô chọn COD, chuyển khoản QR BIDV và VNPay sandbox khi được cấu hình. Lựa chọn gửi lại biểu mẫu có CSRF để tạo báo giá phù hợp, giữ thông tin nhận hàng đang nhập. Khi JavaScript không hoạt động, danh sách chọn phương thức vẫn sử dụng được.

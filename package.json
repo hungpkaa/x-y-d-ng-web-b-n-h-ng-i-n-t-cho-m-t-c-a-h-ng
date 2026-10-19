@@ -7,6 +7,9 @@
     "node": ">=24"
   },
   "scripts": {
+    "catalog:images": "node scripts/prepare-catalog-images.js",
+    "catalog:import": "node --env-file-if-exists=.env scripts/import-demo-catalog.js",
+    "catalog:fill-images": "node --env-file-if-exists=.env scripts/fill-product-images.js",
     "start": "node --env-file-if-exists=.env src/server.js",
     "dev": "node --env-file-if-exists=.env --watch src/server.js",
     "test": "node --test",
