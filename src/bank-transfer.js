@@ -60,6 +60,8 @@ function confirmBankTransfer(db,actor,orderId,input,now=Date.now()) {
     const paymentId=Number(db.prepare("INSERT INTO payments(order_id,provider,reference,amount,status,provider_transaction_id,occurred_at,evidence_ref) VALUES(?,'BANK_TRANSFER',?,?,'SUCCEEDED',?,?,?)").run(orderId,'BANK-'+reference,instructions.amount,reference,occurred,reference).lastInsertRowid);
     db.prepare('INSERT INTO bank_transfer_receipts(order_id,payment_id,actor_id,bank_transaction_id,amount,note,occurred_at,created_at) VALUES(?,?,?,?,?,?,?,?)').run(orderId,paymentId,admin.id,reference,instructions.amount,note,occurred,utc(now));
     db.prepare('UPDATE orders SET payment_status=?,version=version+1 WHERE id=?').run(cancelled?'REFUND_PENDING':'PAID',orderId);
+    const currentStatus=db.prepare('SELECT status FROM orders WHERE id=?').get(orderId).status;
+    db.prepare('INSERT INTO order_history(order_id,actor_id,status,previous_status,note) VALUES(?,?,?,?,?)').run(orderId,admin.id,currentStatus,currentStatus,cancelled?'Đã đối soát khoản chuyển sau hủy; cần hoàn tiền.':'Đã đối soát đủ tiền chuyển khoản ngân hàng.');
     db.prepare("INSERT INTO audit_logs(actor_id,action,entity_type,entity_id,after_json) VALUES(?,'BANK_TRANSFER_RECEIPT','ORDER',?,?)").run(admin.id,orderId,JSON.stringify({payment_id:paymentId,amount:instructions.amount,outcome:cancelled?'REFUND_PENDING':'PAID'}));
     return {status:200,paymentId,replayed:false,message:cancelled?'Đã ghi khoản thu cần hoàn; đơn đã hủy không mở lại.':'Đã đối soát đủ tiền chuyển khoản.'};
   });

@@ -125,7 +125,10 @@ test('HTTP địa chỉ, hỗ trợ/nội bộ, SMTP giả, vô hiệu phiên, V
     const bankRoute='/admin/orders/'+bankUrl.split('/').pop()+'/bank-transfer';
     assert.equal((await post(bankRoute,staff,bankBody)).status,403);
     assert.equal((await post(bankRoute,admin,bankBody)).status,302);
-    assert.match(await (await request(bankUrl,customer)).text(),/Đã xác nhận đủ tiền/);
+    const confirmedBankPage=await (await request(bankUrl,customer)).text();
+    assert.match(confirmedBankPage,/Đã xác nhận đủ tiền/);assert.match(confirmedBankPage,/Khoản chuyển đã đối soát/);
+    const paidInvoice=await (await request(bankUrl+'/invoice',customer)).text();
+    assert.match(paidInvoice,/Tiền đã ghi nhận thu/);assert.match(paidInvoice,/Thu trừ hoàn/);
     const afterBankList=await (await request('/admin/bank-transfers?state=RECORDED',admin)).text();
     assert.match(afterBankList,new RegExp('DH'+bankUrl.split('/').pop()));
     assert.equal((await post('/checkout',customer,{token:bankToken,method:'BANK_TRANSFER',recipient:'Bank Buyer',phone:'0901234567',address:'123 Bank delivery street'})).headers.get('location'),bankUrl);
