@@ -26,6 +26,12 @@ Cập nhật trang danh mục: thêm `category-presentation.js` và `category-la
 Gmail vẫn tạm hoãn. Không thay luật thanh toán, quyền, dữ liệu cửa hàng, thông tin nhận tiền hoặc triển khai web trong bước thiết kế.
 # Bổ sung giao diện chi tiết sản phẩm và thanh toán
 
+## Ảnh trong giỏ và xác nhận đơn
+
+- Bổ sung ảnh thu nhỏ, mã SKU và liên kết về đúng cấu hình trong giỏ; ảnh thu nhỏ trong phần kiểm tra đơn ở checkout.
+- Dữ liệu ảnh chỉ phục vụ trình bày, được truy vấn theo nhóm SKU; không sửa phép tính tiền hoặc tồn kho. Sản phẩm ẩn/không còn tồn tại sử dụng chỗ giữ ảnh, không đưa ảnh bản nháp vào giỏ.
+- Kiểm thử ảnh đầu theo thứ tự, giữ nguyên giá/số lượng/tồn, sản phẩm ẩn và SKU không tồn tại; kiểm thử HTTP giỏ tài khoản và luồng thanh toán đạt. Chưa kiểm tra trực quan bố cục mới trong trình duyệt.
+
 ## Xem ảnh lớn
 
 - Thư viện ảnh có bộ đếm, nút trước/sau, ảnh thu nhỏ đánh dấu ảnh hiện tại và cửa sổ xem ảnh lớn dùng `dialog`.

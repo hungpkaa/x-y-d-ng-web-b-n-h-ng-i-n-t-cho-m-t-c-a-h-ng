@@ -6,8 +6,8 @@
 <% } else { %>
   <div class="cart-layout"><section class="cart-lines" aria-label="Sản phẩm trong giỏ">
   <% items.forEach(item=>{ %>
-    <article class="panel cart-line"><div class="cart-line-info">
-      <h2><%= item.name %></h2><p><%= item.sku %></p><p><%= item.color %> <%= item.configuration %></p>
+    <article class="panel cart-line"><div class="cart-line-info"><div class="cart-item-heading"><%- include('cart-product-image',{item}) %><div>
+      <h2><% if(item.product_url) { %><a href="<%= item.product_url %>"><%= item.name %></a><% } else { %><%= item.name %><% } %></h2><p class="cart-sku-label"><%= item.sku %></p><p><%= [item.color,item.configuration].filter(Boolean).join(' · ') %></p></div></div>
       <% if(item.unitPrice===null) { %><p>Sản phẩm không còn bán. Bạn có thể xóa khỏi giỏ.</p>
       <% } else { %><p><%= money(item.price) %> · Còn <%= item.stock %></p><% } %>
       <% if(item.needsAdjustment) { %><p role="status">Giỏ đã được gộp. Tổng mong muốn: <%= item.quantity %>. Hãy chọn lại số lượng từ 0 đến 99, phù hợp tồn kho.</p><% } %>
