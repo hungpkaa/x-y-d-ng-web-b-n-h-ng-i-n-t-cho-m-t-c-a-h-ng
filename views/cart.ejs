@@ -1,3 +1,4 @@
+<%- include('shopping-steps',{step:'cart'}) %>
 <h1>Giỏ hàng</h1>
 <p class="configuration-help"><%= user?'Giỏ được lưu theo tài khoản của bạn.':'Bạn có thể chọn hàng trước và đăng nhập khi đặt hàng.' %> Sản phẩm trong giỏ chưa được giữ kho.</p>
 <% if(!items.length) { %>

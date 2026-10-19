@@ -4,7 +4,7 @@ const {spawn}=require('node:child_process');
 const {randomBytes}=require('node:crypto');
 test('HTTP so sánh vãng lai có CSRF, giữ qua đăng nhập; chặn khác danh mục/quá 3, số 0/false/thiếu, gợi ý chọn đúng SKU',async()=>{
   const password=randomBytes(16).toString('hex');
-  const bootstrap=`const data=require(${JSON.stringify(require.resolve('../src/db'))});const db=data.defaultDatabase();const category=db.prepare('SELECT category_id FROM products WHERE id=1').get().category_id;db.prepare("UPDATE products SET category_id=?,category='Phone' WHERE id IN (2,3,4)").run(category);db.exec("INSERT INTO attribute_definitions(id,category_id,code,label,data_type,unit) VALUES(900,1,'test_ram','Test RAM','NUMBER','GB'),(901,1,'test_wifi','Test Wi-Fi','BOOLEAN','');INSERT INTO variant_attribute_values(variant_id,attribute_id,value_number) VALUES(1,900,0),(2,900,8);INSERT INTO variant_attribute_values(variant_id,attribute_id,value_boolean) VALUES(1,901,0),(2,901,1);INSERT INTO product_variants(id,product_id,sku,price,on_hand,active) VALUES(901,1,'TEST-COMPARE-EXTRA',30000000,2,1),(902,1,'PRIVATE-SKU',1,1,0)");data.defaultDatabase=()=>db;require(${JSON.stringify(require.resolve('../src/server'))});`;
+  const bootstrap=`const data=require(${JSON.stringify(require.resolve('../src/db'))});const db=data.defaultDatabase();const category=db.prepare('SELECT category_id FROM products WHERE id=1').get().category_id;db.prepare("UPDATE products SET category_id=?,category='Phone' WHERE id IN (2,3,4)").run(category);db.exec("INSERT INTO attribute_definitions(id,category_id,code,label,data_type,unit) VALUES(900,1,'test_ram','Test RAM','NUMBER','GB'),(901,1,'test_wifi','Test Wi-Fi','BOOLEAN','');INSERT INTO variant_attribute_values(variant_id,attribute_id,value_number) VALUES(1,900,0),(2,900,8);INSERT INTO variant_attribute_values(variant_id,attribute_id,value_boolean) VALUES(1,901,0),(2,901,1);INSERT INTO product_variants(id,product_id,sku,price,on_hand,active) VALUES(901,1,'TEST-COMPARE-EXTRA',30000000,2,1),(902,1,'PRIVATE-SKU',1,1,0)");db.exec("INSERT INTO products(id,name,category,brand,description,price,stock) VALUES(903,'CATEGORY-LAPTOP','Laptop','ASUS','Category fixture',18000000,2); INSERT INTO product_variants(id,product_id,sku,price,on_hand,active) VALUES(903,903,'CATEGORY-LAPTOP-SKU',18000000,2,1)");data.defaultDatabase=()=>db;require(${JSON.stringify(require.resolve('../src/server'))});`;
   const child=spawn(process.execPath,['-e',bootstrap],{env:{...process.env,NODE_ENV:'test',PORT:'0',DB_PATH:':memory:',ADMIN_EMAIL:'admin@test.com',ADMIN_PASSWORD:password},windowsHide:true,stdio:['ignore','pipe','pipe']});
   let base,cookie,csrf,errors='';child.stderr.on('data',chunk=>errors+=chunk);
   const get=url=>fetch(base+url,{redirect:'manual',headers:cookie?{cookie}:{}});
@@ -30,6 +30,15 @@ test('HTTP so sánh vãng lai có CSRF, giữ qua đăng nhập; chặn khác da
     html=await (await get('/compare')).text();csrf=html.match(/name="_csrf" value="([^"]+)"/)[1];assert.match(html,/So sánh SKU \(3\/3\)/);assert.match(html,/TEST-COMPARE-EXTRA/);
     await post('/compare/clear',{});html=await (await get('/compare')).text();assert.match(html,/Chưa có SKU để so sánh/);
     response=await get('/recommendations?category_id=1&min=25000000&max=35000000');assert.equal(response.status,200);html=await response.text();assert.match(html,/TEST-COMPARE-EXTRA/);assert.match(html,/\?sku=901#sku-901/);assert.ok(!html.includes('PRIVATE-SKU'));
+    response=await get('/?category=Phone');assert.equal(response.status,200);html=await response.text();
+    assert.match(html,/<div class="category-spotlight category-theme-phone">/);
+    assert.doesNotMatch(html,/<div class="category-spotlight category-phone">/);
+    assert.match(html,/class="category-phone category-phone-main"/);
+    response=await get('/?category=Laptop');assert.equal(response.status,200);html=await response.text();
+    assert.match(html,/category-spotlight category-theme-laptop/);assert.match(html,/Một chiếc laptop/);assert.match(html,/category-brand-grid/);assert.match(html,/Chọn theo giá/);
+    const laptopBrands=html.match(/<nav class="category-brand-grid"[^>]*>([\s\S]*?)<\/nav>/)[1];
+    assert.match(laptopBrands,/ASUS/);assert.doesNotMatch(laptopBrands,/Samsung/);
+    assert.ok(html.includes('category=Laptop'));assert.ok(html.includes('min=15000000'));
     response=await get('/products/1?sku=901');assert.equal(response.status,200);html=await response.text();assert.match(html,/Tham chiếu: iPhone 16 · TEST-COMPARE-EXTRA/);assert.match(html,/id="sku-901" class="panel selected-sku"/);
     assert.equal((await get('/products/1?sku=2')).status,404);assert.equal((await get('/products/1?sku=902')).status,404);
     assert.equal((await get('/recommendations?max=bad')).status,400);assert.equal((await get('/recommendations?max=1&max=2')).status,400);

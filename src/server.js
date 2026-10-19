@@ -142,7 +142,7 @@ app.post('/watches/:id',customer,(req,res)=>productResult(req,res,engagement.wat
 app.get('/',(req,res) => {
   const listing=listProducts(db,req.query);
   if(listing.status!==200) return res.status(listing.status).send(listing.message);
-  render(res,'catalog',{...listing,categories:db.prepare("SELECT DISTINCT category FROM products WHERE status='ACTIVE' ORDER BY category").all(),brands:db.prepare("SELECT DISTINCT brand FROM products WHERE status='ACTIVE' ORDER BY brand").all(),recommendation:recommendProducts(db)});
+  render(res,'catalog',{...listing,categories:db.prepare("SELECT DISTINCT category FROM products WHERE status='ACTIVE' ORDER BY category").all(),brands:db.prepare("SELECT DISTINCT brand FROM products WHERE status='ACTIVE' AND (?='' OR category=?) ORDER BY brand").all(listing.category,listing.category),categoryDesign:listing.category?require('./category-presentation').categoryPresentation(listing.category):null,recommendation:recommendProducts(db)});
 });
 app.get('/compare',(req,res)=>render(res,'compare',{comparison:comparisonTable(db,req.session.comparison)}));
 app.post('/compare/:action',(req,res)=>{

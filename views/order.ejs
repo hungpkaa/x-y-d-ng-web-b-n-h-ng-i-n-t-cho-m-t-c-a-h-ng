@@ -1,3 +1,4 @@
+<%- include('shopping-steps',{step:'order'}) %>
 <h1>Đơn hàng #<%= order.id %></h1><a href="<%= user.role==='CUSTOMER'?'/orders':'/admin/orders' %>">← Danh sách đơn</a>
 <%- include('order-overview') %>
 <% if(user.role==='CUSTOMER'?order.status==='PENDING':transitions[order.status].some(status=>!['SHIPPING','DELIVERED'].includes(status))) { %>

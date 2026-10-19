@@ -1,0 +1,1 @@
+<ol class="shopping-steps" aria-label="Các bước mua hàng"><% [['Giỏ hàng','cart'],['Xác nhận đơn','checkout'],['Theo dõi đơn','order']].forEach(([label,key],index)=>{ %><li class="<%= key===step?'current-step':'' %>" <%= key===step?'aria-current=step':'' %>><span><%= index+1 %></span><strong><%= label %></strong></li><% }) %></ol>

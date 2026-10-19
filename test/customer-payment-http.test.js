@@ -106,6 +106,9 @@ test('HTTP địa chỉ, hỗ trợ/nội bộ, SMTP giả, vô hiệu phiên, V
     assert.match(optionChange.headers.get('location'),/method=BANK_TRANSFER/);
     const bankCheckout=await (await request('/checkout?method=BANK_TRANSFER',customer)).text();
     assert.match(bankCheckout,/value="BANK_TRANSFER" selected/);
+    assert.match(bankCheckout,/data-payment-choice="BANK_TRANSFER" aria-pressed="true"/);
+    assert.match(bankCheckout,/data-payment-choice="COD" aria-pressed="false"/);
+    assert.match(bankCheckout,/class="shopping-steps"/);
     assert.match(bankCheckout,/Quét QR chuyển khoản BIDV/);assert.match(bankCheckout,/value="Bank Buyer"/);
     const bankToken=bankCheckout.match(/name="token" value="([^"]+)"/)[1];
     const bankPlaced=await post('/checkout',customer,{token:bankToken,method:'BANK_TRANSFER',recipient:'Bank Buyer',phone:'0901234567',address:'123 Bank delivery street'});

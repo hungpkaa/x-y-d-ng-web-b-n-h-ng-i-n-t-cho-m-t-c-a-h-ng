@@ -1,0 +1,7 @@
+function categoryPresentation(category) {
+  const normalized=category.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d');
+  if(/laptop|may tinh xach tay/.test(normalized)) return {theme:'laptop',eyebrow:'LÀM VIỆC LINH HOẠT · SÁNG TẠO MỖI NGÀY',title:'Một chiếc laptop.\nNhiều điều có thể.',description:'Từ học tập, văn phòng đến sáng tạo — chọn cấu hình phù hợp với công việc và ngân sách của bạn.',note:'RAM, bộ nhớ, màn hình — so sánh trước khi chọn.',budgets:[['Dưới 15 triệu','',15000000],['15 – 20 triệu',15000000,20000000],['20 – 30 triệu',20000000,30000000],['Trên 30 triệu',30000000,'']]};
+  if(/dien thoai|phone/.test(normalized)) return {theme:'phone',eyebrow:'KẾT NỐI NHIỀU HƠN · TRẢI NGHIỆM TỐT HƠN',title:'Điện thoại mới.\nKhởi đầu mới.',description:'Khám phá điện thoại theo thương hiệu, dung lượng và mức giá. Tìm chiếc máy phù hợp với cách bạn sử dụng mỗi ngày.',note:'Mỗi màu sắc, mỗi dung lượng — một lựa chọn của bạn.',budgets:[['Dưới 5 triệu','',5000000],['5 – 10 triệu',5000000,10000000],['10 – 20 triệu',10000000,20000000],['Trên 20 triệu',20000000,'']]};
+  return {theme:'accessories',eyebrow:'THIẾT BỊ PHÙ HỢP · TRẢI NGHIỆM TRỌN VẸN',title:category+'\ncho mỗi ngày.',description:'Khám phá sản phẩm theo thương hiệu và ngân sách. Xem kỹ cấu hình để tìm lựa chọn phù hợp với bạn.',note:'Giá và thông số rõ ràng theo từng cấu hình.',budgets:[['Dưới 1 triệu','',1000000],['1 – 3 triệu',1000000,3000000],['3 – 5 triệu',3000000,5000000],['Trên 5 triệu',5000000,'']]};
+}
+module.exports={categoryPresentation};

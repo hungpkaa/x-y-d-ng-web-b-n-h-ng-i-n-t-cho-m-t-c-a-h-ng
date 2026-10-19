@@ -2,6 +2,16 @@
 document.querySelector('[data-print-invoice]')?.addEventListener('click',()=>window.print());
 const checkoutOptions=document.querySelector('[data-checkout-options]');
 if(checkoutOptions) {
+  const choiceCards=document.querySelector('.payment-choice-cards');
+  if(choiceCards) {
+    choiceCards.hidden=false;
+    checkoutOptions.elements.method.closest('label').hidden=true;
+    choiceCards.querySelectorAll('[data-payment-choice]').forEach(button=>button.addEventListener('click',()=>{
+      if(button.dataset.paymentChoice===checkoutOptions.elements.method.value) return;
+      checkoutOptions.elements.method.value=button.dataset.paymentChoice;
+      checkoutOptions.requestSubmit();
+    }));
+  }
   checkoutOptions.addEventListener('submit',()=>{
     const delivery=document.getElementById('place-order-form');
     for(const [source,target] of [['recipient','recipient'],['phone','phone'],['address','delivery_address']]) {

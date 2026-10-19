@@ -1,5 +1,9 @@
 # Bộ tài liệu phân tích và thiết kế Electro Store
 
+## Thiết kế lại giao diện — 19/10/2026
+
+[Bộ giao diện cửa hàng điện tử](47_THIET_KE_LAI_GIAO_DIEN.md): tham khảo cấu trúc CellphoneS, thay header/footer, bố cục trang chủ và áp dụng bộ thiết kế chung cho khách hàng/quản trị. Toàn bộ: 133 đạt, 0 lỗi, 11 bỏ qua; smoke đạt. Chưa nghiệm thu trực quan vì công cụ không có trình duyệt khả dụng.
+
 ## Bổ sung QR ngân hàng — 18/10/2026
 
 [Đặc tả chuyển khoản QR ngân hàng](46_BO_SUNG_THANH_TOAN_QR_NGAN_HANG.md): đã đồng ý bổ sung, nhận ảnh QR, tài khoản BIDV và thời hạn chờ xác nhận 30 phút từ tạo đơn. Chưa đối chiếu payload QR, triển khai hoặc bật phương thức cho khách. Gmail tạm hoãn.
