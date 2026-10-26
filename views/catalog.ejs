@@ -1,4 +1,3 @@
-<link rel="stylesheet" href="/retail-shopping.css">
 <% const hasFilters=Boolean(q||category||brand||min||max); %>
 <% const currentSort=typeof sort==='string'?sort:'newest'; const browseUrl=(changes={})=>'/?'+new URLSearchParams({q,category,brand,min,max,sort:currentSort,...changes}).toString()+'#catalog-products'; %>
 <% if(!hasFilters&&paging.page===1) { %>
@@ -7,6 +6,7 @@
 <% if(category) { %><%- include('category-landing') %><% } %>
 <section id="catalog-products" aria-labelledby="catalog-heading">
   <div class="section-heading"><div><small>THIẾT BỊ DÀNH CHO BẠN</small><h1 id="catalog-heading"><%= category?category+' phù hợp với bạn':hasFilters?'Kết quả tìm sản phẩm':'Khám phá sản phẩm' %></h1></div><span><%= paging.total %> sản phẩm</span></div>
+  <% if(catalogGroups.some(group=>group.products.some(p=>String(p.description||'').startsWith('DỮ LIỆU MẪU')))) { %><p class="catalog-sample-notice"><strong>Danh mục có dữ liệu mẫu.</strong> Sản phẩm gắn nhãn “Dữ liệu mẫu” có giá, tồn kho và cấu hình dùng để thử nghiệm, không phải báo giá bán thực tế.</p><% } %>
   <% if(catalogGroups.length>1) { %><nav class="catalog-jump-nav" aria-label="Đến danh mục sản phẩm"><span>Khám phá nhanh</span><% catalogGroups.filter(group=>group.products.length).forEach((group,index)=>{ %><a href="#catalog-category-<%= index %>"><%= group.category %><small><%= group.paging.total %></small></a><% }); %></nav><% } %>
   <div class="catalog-shopping-tools">
     <% if(typeof brands!=='undefined'&&brands.length) { %><nav class="catalog-brand-shortcuts" aria-label="Lọc nhanh thương hiệu"><strong>Thương hiệu</strong><a href="<%= browseUrl({brand:''}) %>" <%- !brand?'aria-current="true"':'' %>>Tất cả</a><% brands.forEach(item=>{ %><a href="<%= browseUrl({brand:item.brand}) %>" <%- brand===item.brand?'aria-current="true"':'' %>><%= item.brand %></a><% }); %></nav><% } %>

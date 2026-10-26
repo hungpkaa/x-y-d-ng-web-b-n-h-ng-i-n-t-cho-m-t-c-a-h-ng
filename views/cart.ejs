@@ -1,5 +1,5 @@
 <%- include('shopping-steps',{step:'cart'}) %>
-<h1>Giỏ hàng</h1>
+<div class="cart-page-heading"><div><span class="detail-section-kicker">CHỈ CÒN MỘT BƯỚC NỮA</span><h1>Giỏ hàng của bạn</h1></div><a href="/">Tiếp tục mua sắm →</a></div>
 <p class="configuration-help"><%= user?'Giỏ được lưu theo tài khoản của bạn.':'Bạn có thể chọn hàng trước và đăng nhập khi đặt hàng.' %> Sản phẩm trong giỏ chưa được giữ kho.</p>
 <% if(!items.length) { %>
   <section class="empty-state"><h2>Giỏ hàng đang trống</h2><p>Chọn thiết bị và cấu hình phù hợp để bắt đầu.</p><a class="button" href="/">Khám phá sản phẩm</a></section>
@@ -15,7 +15,7 @@
     </div>
     <form method="post" action="/cart"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="id" value="<%= item.id %>">
       <% if(cartVersion!==null) { %><input type="hidden" name="cart_version" value="<%= cartVersion %>"><% } %>
-      <label>Số lượng (0 để xóa)<input type="number" name="quantity" min="0" max="99" value="<%= item.quantity %>" required></label><button>Cập nhật</button>
+      <%- include('quantity-control',{value:item.quantity,min:0,max:99,quantityLabel:'Số lượng (0 để xóa)'}) %><button>Cập nhật</button>
     </form><div class="cart-line-total"><small>Thành tiền</small><strong><%= item.unitPrice===null?'Chưa xác định':money(item.price*item.quantity) %></strong></div>
     <form method="post" action="/cart" class="cart-remove"><input type="hidden" name="_csrf" value="<%= csrf %>"><input type="hidden" name="id" value="<%= item.id %>"><input type="hidden" name="quantity" value="0"><% if(cartVersion!==null) { %><input type="hidden" name="cart_version" value="<%= cartVersion %>"><% } %><button class="secondary" aria-label="Xóa <%= item.name %> khỏi giỏ">Xóa khỏi giỏ</button></form></article>
   <% }) %>

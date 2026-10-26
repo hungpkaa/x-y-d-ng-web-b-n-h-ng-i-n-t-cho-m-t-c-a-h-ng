@@ -1,8 +1,9 @@
 <!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Electro Store</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/storefront.css"><link rel="stylesheet" href="/retail.css"></head>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Electro Store</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/storefront.css"><link rel="stylesheet" href="/retail.css"><% if(page==='catalog') { %><link rel="stylesheet" href="/retail-shopping.css"><% } %><% if(!managementLayout) { %><link rel="stylesheet" href="/retail-refinement.css"><% } %></head>
 <body class="page-<%= page %> <%= managementLayout?'is-management':'is-storefront' %>"><script src="/storefront.js" defer></script><% if(['checkout','addresses','profile'].includes(page)) { %><script src="/address-picker.js" defer></script><% } %><%- include('store-header') %>
 <% if(managementLayout) { %><div class="admin-layout"><%- include('admin-sidebar') %><% } %>
 <main id="main-content"><% if(notice) { %><p class="notice" role="status"><%= notice %></p><% } %>
+<% if(['product','cart'].includes(page)) { %><script src="/quantity-control.js" defer></script><% } %>
 <% if(page === 'catalog') { %>
 <%- include('catalog') %>
 <% } else if(page === 'product') { %>

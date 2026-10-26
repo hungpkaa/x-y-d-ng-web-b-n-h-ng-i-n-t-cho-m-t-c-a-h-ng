@@ -1,0 +1,36 @@
+﻿const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const vm=require('node:vm');
+const fs=require('node:fs');
+const path=require('node:path');
+const ejs=require('ejs');
+test('quantity buttons respect limits and never submit automatically',()=>{
+  const listeners={};let events=0;
+  const input={value:'1',min:'1',max:'3',addEventListener:(type,fn)=>listeners[type]=fn,dispatchEvent:()=>events++};
+  const minus={hidden:true,addEventListener:(type,fn)=>minus[type]=fn};
+  const plus={hidden:true,addEventListener:(type,fn)=>plus[type]=fn};
+  const control={querySelector:selector=>selector==='input'?input:selector==='[data-quantity-minus]'?minus:plus};
+  vm.runInNewContext(fs.readFileSync(require.resolve('../public/quantity-control.js'),'utf8'),{document:{querySelectorAll:()=>[control]},Event:class{}});
+  assert.equal(minus.disabled,true);assert.equal(plus.hidden,false);
+  plus.click();assert.equal(input.value,'2');plus.click();assert.equal(input.value,'3');assert.equal(plus.disabled,true);
+  plus.click();assert.equal(input.value,'3');minus.click();assert.equal(input.value,'2');
+  input.value='';plus.click();assert.equal(input.value,'2');
+  input.value='99';minus.click();assert.equal(input.value,'3');
+  input.min='0';input.value='1';minus.click();assert.equal(input.value,'0');assert.equal(minus.disabled,true);
+  assert.ok(events>0);
+});
+test('purchase summary submits the selected SKU, disables unavailable stock and omits buying controls for staff',async()=>{
+  const variants=[{id:5,price:100,stock:4,color:'Black',configuration:'128GB',sku:'SKU-5'},{id:6,price:200,stock:0,color:'White',configuration:'256GB',sku:'SKU-6'}];
+  const locals={product:{id:1,name:'Test Phone',brand:'Demo',category:'Phone'},variants,recommendation:{anchor:{id:5}},money:String,csrf:'test-token',user:null};
+  const file=path.join(__dirname,'../views/product-purchase-summary.ejs');
+  const available=await ejs.renderFile(file,locals);
+  assert.match(available,/name="id" value="5"/);assert.match(available,/name="action" value="add"/);
+  assert.match(available,/name="quantity" value="1" min="1" max="4"/);
+  assert.doesNotMatch(available,/class="purchase-add-button" disabled/);
+  const unavailable=await ejs.renderFile(file,{...locals,recommendation:{anchor:{id:6}}});
+  assert.match(unavailable,/name="id" value="6"/);assert.match(unavailable,/class="purchase-add-button" disabled/);
+  const staff=await ejs.renderFile(file,{...locals,user:{role:'STAFF'}});
+  assert.doesNotMatch(staff,/action="\/cart"/);
+  const empty=await ejs.renderFile(file,{...locals,variants:[],recommendation:{anchor:null}});
+  assert.match(empty,/Chưa có cấu hình/);assert.doesNotMatch(empty,/action="\/cart"/);
+});

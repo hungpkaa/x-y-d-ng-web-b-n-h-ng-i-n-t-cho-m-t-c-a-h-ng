@@ -84,6 +84,7 @@ app.use((req,res,next) => {
   res.locals.user = req.user;
   res.locals.addressProvinces=addressProvinces;
   res.locals.addressParts=addressParts;
+  res.locals.productCardInfo=require('./product-presentation').productCardInfo;
   if(req.user) res.set('Cache-Control','no-store');
   res.locals.csrf = req.session.csrf;
   res.locals.money = value => new Intl.NumberFormat('vi-VN',{ style:'currency',currency:'VND' }).format(value);

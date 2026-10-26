@@ -28,7 +28,7 @@ function listProducts(db,query={},management=false) {
   const filters={q,category,brand,sort,min,max,...(management?{status}:{})};
   const paging=pagination(total,pageNumber(query.page),20,management?'/admin':'/',filters);
   const order={newest:'p.id DESC',price_asc:'s.price ASC,p.id DESC',price_desc:'s.price DESC,p.id DESC'}[sort];
-  const products=db.prepare(`SELECT p.*,s.price,s.stock,(SELECT storage_key FROM product_images WHERE product_id=p.id ORDER BY sort_order,id LIMIT 1) AS image_key ${from} ORDER BY ${order} LIMIT ? OFFSET ?`).all(...params,paging.size,paging.offset);
+  const products=db.prepare(`SELECT p.*,s.price,s.stock,(SELECT configuration FROM product_variants WHERE product_id=p.id AND active=1 AND price=s.price ORDER BY id LIMIT 1) AS card_configuration,(SELECT storage_key FROM product_images WHERE product_id=p.id ORDER BY sort_order,id LIMIT 1) AS image_key ${from} ORDER BY ${order} LIMIT ? OFFSET ?`).all(...params,paging.size,paging.offset);
   return {...filters,status:200,productStatus:status,products,paging};
 }
 function catalogGroups(db,query,listing,categories) {

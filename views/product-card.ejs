@@ -1,9 +1,11 @@
 ﻿<article class="card product-card">
-  <div class="product-card-topline"><span class="product-brand-label"><%= p.brand %></span><span class="product-availability <%= p.stock>0?'available':'unavailable' %>"><i></i><%= p.stock>0?'Có hàng':'Tạm hết' %></span></div>
+  <% const cardInfo=productCardInfo(p); %>
+  <div class="product-card-topline"><span class="product-brand-label"><%= p.brand %></span><% if(cardInfo.sample) { %><span class="product-sample-badge">Dữ liệu mẫu</span><% } %></div>
   <a class="product-art" href="/products/<%= p.id %>"><% if(p.image_key) { %><img src="/media/<%= p.image_key %>" alt="<%= p.name %>" loading="lazy" width="220" height="190"><% } else { %><span class="device-placeholder" aria-label="Chưa có ảnh"><svg viewBox="0 0 80 100" aria-hidden="true"><rect x="18" y="4" width="44" height="90" rx="9" fill="none" stroke="currentColor" stroke-width="3"/><path d="M31 12h18M36 86h8" stroke="currentColor" stroke-width="3"/><path d="M24 60 55 22v48H24Z" fill="currentColor" opacity=".12"/></svg></span><% } %></a>
   <small class="product-category-label"><%= p.category %></small>
   <h2><a href="/products/<%= p.id %>"><%= p.name %></a></h2>
   <div class="product-price"><span>Giá từ</span><strong class="price"><%= money(p.price) %></strong></div>
-  <p class="product-description"><%= p.description %></p>
+  <div class="product-card-specs"><% if(cardInfo.specs.length) { %><ul aria-label="Cấu hình theo giá hiển thị"><% cardInfo.specs.forEach(spec=>{ %><li><%= spec %></li><% }); %></ul><% } else { %><p><%= cardInfo.sample?'Ảnh và cấu hình tham khảo':'Xem thông số và cấu hình chi tiết' %></p><% } %></div>
+  <p class="product-card-stock <%= p.stock>0?'available':'unavailable' %>"><span aria-hidden="true">●</span><%= p.stock>0?'Có hàng · Chọn cấu hình':'Tạm hết hàng' %></p>
   <a class="button secondary product-card-action" href="/products/<%= p.id %>"><%= p.stock>0?'Chọn cấu hình':'Xem sản phẩm' %><span aria-hidden="true">→</span></a>
 </article>
