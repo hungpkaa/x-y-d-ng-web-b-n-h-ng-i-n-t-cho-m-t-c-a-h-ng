@@ -31,4 +31,11 @@ function listProducts(db,query={},management=false) {
   const products=db.prepare(`SELECT p.*,s.price,s.stock,(SELECT storage_key FROM product_images WHERE product_id=p.id ORDER BY sort_order,id LIMIT 1) AS image_key ${from} ORDER BY ${order} LIMIT ? OFFSET ?`).all(...params,paging.size,paging.offset);
   return {...filters,status:200,productStatus:status,products,paging};
 }
-module.exports={listProducts,pagination};
+function catalogGroups(db,query,listing,categories) {
+  if(listing.category) return [{category:listing.category,products:listing.products,paging:listing.paging}];
+  return categories.map(({category})=>{
+    const group=listProducts(db,{...query,category,page:'1'});
+    return {category,products:group.products,paging:group.paging};
+  }).filter(group=>group.products.length);
+}
+module.exports={listProducts,pagination,catalogGroups};

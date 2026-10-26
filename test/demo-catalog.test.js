@@ -33,3 +33,21 @@ test('Catalog mẫu: thiếu ảnh không ghi dữ liệu; lỗi giữa chừng 
     assert.equal(db.prepare("SELECT COUNT(*) n FROM product_images WHERE storage_key LIKE 'sample-dj-%'").get().n,0);
   } finally {db.close();}
 });
+
+test('Danh mục bổ sung: đúng nhóm điện tử, chạy lại an toàn và ghi đúng nguồn',()=>{
+  const extra=require('../fixtures/catalog/extra-products.json');
+  const db=openDatabase(':memory:');seed(db);
+  try {
+    const result=importDemoCatalog(db,extra,()=>Buffer.from('test image'));
+    assert.equal(result.created,19);assert.equal(result.images,29);assert.equal(result.drafts,0);
+    for(const category of ['Điện gia dụng','Màn hình','Thiết bị lưu trữ']) {
+      assert.ok(db.prepare("SELECT COUNT(*) n FROM products WHERE category=? AND status='ACTIVE'").get(category).n>0);
+    }
+    assert.equal(db.prepare("SELECT COUNT(*) n FROM product_variants WHERE sku LIKE 'SAMPLE-FS-%'").get().n,6);
+    assert.equal(db.prepare("SELECT COUNT(*) n FROM inventory_movements WHERE source_key LIKE 'sample:fakestore:%'").get().n,6);
+    const logs=db.prepare("SELECT after_json FROM audit_logs WHERE action='IMPORT_SAMPLE_CATALOG'").all().map(row=>JSON.parse(row.after_json));
+    assert.equal(logs.filter(log=>log.source.startsWith('https://fakestoreapi.com/')).length,6);
+    const replay=importDemoCatalog(db,extra,()=>Buffer.from('test image'));
+    assert.equal(replay.created,0);assert.equal(replay.skipped,19);
+  } finally {db.close();}
+});

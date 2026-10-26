@@ -1,0 +1,12 @@
+<% const parts={...addressParts(value||''),...(typeof draft==='object'?draft:{})}; %>
+<div class="regional-address" data-regional-address data-optional="<%= typeof optional!=='undefined'&&optional?'1':'0' %>">
+  <fieldset data-address-picker hidden disabled>
+    <legend>Khu vực nhận hàng</legend>
+    <div class="regional-address-selects"><label>Tỉnh / Thành phố<select name="province_code" data-address-province autocomplete="address-level1" required><option value="">Chọn tỉnh / thành phố</option><% addressProvinces.forEach(p=>{ %><option value="<%= p.code %>" <%= parts.province_code===p.code?'selected':'' %>><%= p.name %></option><% }); %></select></label>
+    <label>Phường / Xã<select name="ward_code" data-address-ward data-selected="<%= parts.ward_code %>" autocomplete="address-level2" required><option value="">Chọn phường / xã</option></select></label></div>
+    <label>Số nhà, tên đường<input name="address_line" value="<%= parts.address_line %>" minlength="3" maxlength="200" placeholder="Ví dụ: 25 Nguyễn Huệ, tòa nhà A, tầng 2" autocomplete="address-line1" required></label>
+    <p class="regional-address-preview" data-address-preview aria-live="polite"></p>
+  </fieldset>
+  <label data-address-fallback>Địa chỉ<textarea name="address" minlength="10" maxlength="300" autocomplete="street-address" <%= typeof optional!=='undefined'&&optional?'':'required' %>><%= value||'' %></textarea></label>
+  <p class="configuration-help" data-address-message>Chọn khu vực nhận hàng; chỉ nhập số nhà, tên đường và thông tin tòa nhà nếu có.</p>
+</div>

@@ -39,3 +39,46 @@ html{scroll-behavior:smooth}body{background:#f5f5f7}h1,h2,h3{color:#252a32;lette
 .cart-item-heading{display:flex;align-items:flex-start;gap:18px;margin-bottom:16px}.cart-item-heading>div{min-width:0;flex:1}.cart-item-heading h2{margin:0 0 8px;line-height:1.5}.cart-item-heading p{margin:6px 0;font-size:12px;color:#858d98;overflow-wrap:anywhere}.cart-item-heading .cart-sku-label{display:inline-block;background:#f2f4f7;border-radius:5px;padding:3px 7px;font-size:10px;margin:0 0 3px}.purchase-line-image{display:grid;place-items:center;flex-shrink:0;width:100px;height:100px;background:white;border:1px solid var(--line);border-radius:10px;padding:8px;overflow:hidden}.purchase-line-image img{width:100%;height:100%;object-fit:contain}.purchase-line-image:hover{border-color:#e0a8b2}.purchase-line-placeholder{display:grid;place-items:center;color:#b5bdc9}.purchase-line-placeholder .ui-icon{width:35px;height:35px}.checkout-summary .checkout-items>li{display:grid;grid-template-columns:56px minmax(0,1fr);gap:12px;align-items:start}.checkout-items .purchase-line-image{width:56px;height:60px;border-radius:7px;padding:4px}.checkout-items>li>div{min-width:0;overflow-wrap:anywhere}.checkout-summary .checkout-items>li>strong{grid-column:2;text-align:right;font-size:14px;color:var(--red)}.checkout-items>li>div>strong{font-size:12px;line-height:1.6}.checkout-items>li>div>small{font-size:10px;line-height:1.7}
 @media(max-width:600px){.cart-item-heading{gap:12px}.cart-item-heading .purchase-line-image{width:80px;height:85px;padding:6px}.cart-item-heading h2{font-size:14px}.cart-item-heading p{font-size:11px}.cart-item-heading .cart-sku-label{font-size:9px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{transition:none!important;animation:none!important}}
+
+/* Continuous storefront product rail. Scoped to preserve saved/admin grids. */
+#catalog-products{min-width:0;max-width:100%}
+#catalog-products .catalog-rail{display:flex;flex-wrap:nowrap;gap:16px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:#c7cbd2 transparent;padding:4px 3px 16px;cursor:grab;max-width:100%;min-width:0}
+#catalog-products .catalog-rail>.product-card{flex:0 0 calc((100% - 64px)/5);min-width:0;max-width:none}
+.catalog-rail img{-webkit-user-drag:none}
+.catalog-load-feedback{display:flex;align-items:center;gap:12px;font-size:12px;color:var(--muted);margin-top:8px;min-height:24px}
+.catalog-load-feedback button[hidden]{display:none}
+@media(max-width:1100px){#catalog-products .catalog-rail>.product-card{flex-basis:calc((100% - 48px)/4)}}
+@media(max-width:800px){#catalog-products .catalog-rail>.product-card{flex-basis:calc((100% - 32px)/3)}}
+@media(max-width:600px){#catalog-products .catalog-rail>.product-card{flex-basis:82%}}
+
+/* Each category has independent, one-product arrow navigation. */
+.catalog-category{margin:28px 0 36px;min-width:0}
+.catalog-category-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px}
+.catalog-category-heading h2{margin:0 0 4px;font-size:22px}
+.catalog-category-heading span{font-size:12px;color:var(--muted)}
+.catalog-carousel{position:relative;min-width:0}
+.catalog-arrow-controls{position:absolute;inset:0;pointer-events:none}
+.catalog-arrow-controls[hidden]{display:none}
+.catalog-arrow-controls button{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:90px;min-height:0;padding:0;display:grid;place-items:center;pointer-events:auto;border:0;background:#ffffffed;color:#252a32;box-shadow:0 0 28px #00000012;z-index:2}
+.catalog-arrow-controls [data-catalog-prev]{left:0;border-radius:0 48px 48px 0}
+.catalog-arrow-controls [data-catalog-next]{right:0;border-radius:48px 0 0 48px}
+.catalog-arrow-controls button:hover{background:#fff;color:var(--red)}
+.catalog-arrow-controls button:disabled{background:#ffffffd9!important;color:#aeb2b8!important;cursor:default}
+.catalog-arrow-controls svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+@media(max-width:600px){.catalog-arrow-controls button{width:34px;height:72px}.catalog-arrow-controls svg{width:23px;height:23px}}
+#catalog-products .catalog-rail{cursor:default}
+#catalog-products .catalog-rail.is-arrow-controlled{overflow-x:hidden;scrollbar-width:none}
+
+/* Linked Vietnamese region selectors, shared by checkout and address book. */
+.regional-address{min-width:0;grid-column:1/-1;margin-top:6px}
+.regional-address fieldset{min-width:0;border:1px solid #e3e7ed;border-radius:10px;background:#fafbfc;padding:16px;margin:0}
+.regional-address fieldset[hidden],.regional-address [hidden]{display:none}
+.regional-address legend{font-size:12px;font-weight:700;color:#555f70;padding:0 7px}
+.regional-address-selects{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.regional-address label{display:flex;flex-direction:column;gap:7px;margin:0}
+.regional-address input,.regional-address select{width:100%;min-width:0;font-size:13px;background:#fff}
+.regional-address select:disabled{background:#f0f2f5;color:#8b929c}
+.regional-address-preview{font-size:12px;color:#37695b;line-height:1.6;margin:12px 0 0;overflow-wrap:anywhere}
+.regional-address-preview:empty{display:none}
+.regional-address>.configuration-help{font-size:11px;line-height:1.7;margin:9px 0 0}
+@media(max-width:600px){.regional-address-selects{grid-template-columns:1fr;gap:12px}.regional-address fieldset{padding:13px}.regional-address input,.regional-address select{font-size:16px}}

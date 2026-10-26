@@ -132,3 +132,18 @@ test('Hội thoại vượt 100 tin phân trang đúng nội dung khách thấy,
     assert.equal(services.supportDetail(db,{id:3},id).paging.total,211);
   } finally {db.close();}
 });
+
+test('Địa chỉ chọn khu vực được ghép trên máy chủ; sai phường/tỉnh không ghi dữ liệu',()=>{
+  const db=fixture();
+  const {provinces,resolveAddress}=require('../src/address-regions');
+  const province=provinces[0];
+  try {
+    const input={label:'Home',recipient:'Customer',phone:'0901234567',province_code:province.code,ward_code:province.wards[0].code,address_line:'25 Nguyen Hue',address:'Forged address'};
+    const result=services.saveAddress(db,{id:1},null,input);
+    assert.equal(result.status,200);
+    assert.equal(db.prepare('SELECT address FROM addresses WHERE id=?').get(result.id).address,resolveAddress(input));
+    const wrong=services.saveAddress(db,{id:1},null,{...input,ward_code:provinces[1].wards[0].code});
+    assert.equal(wrong.status,400);
+    assert.equal(db.prepare('SELECT COUNT(*) n FROM addresses').get().n,1);
+  } finally {db.close();}
+});

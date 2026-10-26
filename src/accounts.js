@@ -15,7 +15,8 @@ function audit(db,actor,action,id,before,after) {
 function profileFields(input) {
   const name=typeof input.name==='string'?input.name.trim():'';
   const phone=typeof input.phone==='string'?input.phone.trim():'';
-  const address=typeof input.address==='string'?input.address.trim():'';
+  const blankRegion=Object.hasOwn(input,'province_code')&&!input.province_code&&!input.ward_code&&!input.address_line;
+  const address=blankRegion?'':require('./address-regions').resolveAddress(input);
   if(!text(name,2,80)||(phone&&!/^0\d{9}$/.test(phone))||(address&&!text(address,10,300))) reject(400,'Kiểm tra tên (2–80 ký tự), điện thoại 10 số bắt đầu 0 và địa chỉ (10–300 ký tự).');
   return {name,phone,address};
 }

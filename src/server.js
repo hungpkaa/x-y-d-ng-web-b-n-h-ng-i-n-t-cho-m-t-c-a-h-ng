@@ -7,7 +7,8 @@ const { defaultDatabase, hashPassword, verifyPassword } = require('./db');
 const { transitionOrder,recordCodReceipt, transitions, labels, getVariant } = require('./orders');
 const { saveProduct,saveVariant,priceVariant,adjustStock,publishProduct } = require('./products');
 const { saveCatalog } = require('./catalog');
-const { listProducts } = require('./product-list');
+const { listProducts,catalogGroups } = require('./product-list');
+const {provinces:addressProvinces,addressParts,resolveAddress,addressDraft}=require('./address-regions');
 const { saveDefinition,saveAttributes,getAttributes } = require('./attributes');
 const { addImage,changeImage,reorderImages } = require('./product-images');
 const { DatabaseSessionStore,sessionSecret }=require('./session-store');
@@ -81,6 +82,8 @@ app.use((req,res,next) => {
   res.locals.store=storeContent.content(db);
   res.locals.storeCategories=db.prepare('SELECT name FROM categories WHERE active=1 ORDER BY name').all();
   res.locals.user = req.user;
+  res.locals.addressProvinces=addressProvinces;
+  res.locals.addressParts=addressParts;
   if(req.user) res.set('Cache-Control','no-store');
   res.locals.csrf = req.session.csrf;
   res.locals.money = value => new Intl.NumberFormat('vi-VN',{ style:'currency',currency:'VND' }).format(value);
@@ -142,7 +145,8 @@ app.post('/watches/:id',customer,(req,res)=>productResult(req,res,engagement.wat
 app.get('/',(req,res) => {
   const listing=listProducts(db,req.query);
   if(listing.status!==200) return res.status(listing.status).send(listing.message);
-  render(res,'catalog',{...listing,categories:db.prepare("SELECT DISTINCT category FROM products WHERE status='ACTIVE' ORDER BY category").all(),brands:db.prepare("SELECT DISTINCT brand FROM products WHERE status='ACTIVE' AND (?='' OR category=?) ORDER BY brand").all(listing.category,listing.category),categoryDesign:listing.category?require('./category-presentation').categoryPresentation(listing.category):null,recommendation:recommendProducts(db)});
+  const categories=db.prepare("SELECT DISTINCT category FROM products WHERE status='ACTIVE' ORDER BY category").all();
+  render(res,'catalog',{...listing,categories,catalogGroups:catalogGroups(db,req.query,listing,categories),brands:db.prepare("SELECT DISTINCT brand FROM products WHERE status='ACTIVE' AND (?='' OR category=?) ORDER BY brand").all(listing.category,listing.category),categoryDesign:listing.category?require('./category-presentation').categoryPresentation(listing.category):null,recommendation:recommendProducts(db)});
 });
 app.get('/compare',(req,res)=>render(res,'compare',{comparison:comparisonTable(db,req.session.comparison)}));
 app.post('/compare/:action',(req,res)=>{
@@ -383,7 +387,8 @@ app.post('/cart',cartAccess,(req,res) => {
   flash(req,res,'Đã cập nhật giỏ hàng.','/cart');
 });
 app.post('/checkout/options',customer,(req,res)=>{
-  if(Object.hasOwn(req.body,'recipient')) req.session.checkoutDraft={recipient:String(req.body.recipient||'').slice(0,80),phone:String(req.body.phone||'').slice(0,20),address:String(req.body.delivery_address||'').slice(0,300)};
+  if(Object.hasOwn(req.body,'recipient')) req.session.checkoutDraft={recipient:String(req.body.recipient||'').slice(0,80),phone:String(req.body.phone||'').slice(0,20),address:String(req.body.delivery_address||'').slice(0,300),...addressDraft(req.body)};
+  if(req.body.address&&req.body.address!==req.body.delivery_source_address) delete req.session.checkoutDraft;
   const query=new URLSearchParams({method:String(req.body.method||'COD'),code:String(req.body.code||'')});
   if(req.body.address) query.set('address',String(req.body.address));
   res.redirect('/checkout?'+query.toString());
@@ -409,8 +414,10 @@ app.get('/checkout',customer,(req,res) => {
   render(res,'checkout',{items,subtotal,shippingFee,discount:promotion.discount,promotionCode:promotion.code,total:subtotal-promotion.discount+shippingFee,token:req.session.checkoutToken,method,onlineAvailable:Boolean(paymentConfig),addressBook,selectedAddress,bankReceiver:require('./bank-receiver'),bankQrAvailable:require('node:fs').existsSync(path.join(__dirname,'../public/images/payments/bidv-4801021854.png')),checkoutDraft:req.session.checkoutDraft||{}});
 });
 app.post('/checkout',customer,(req,res) => {
-  const {recipient,phone,address}=req.body;
-  req.session.checkoutDraft={recipient:String(recipient||'').slice(0,80),phone:String(phone||'').slice(0,20),address:String(address||'').slice(0,300)};
+  const {recipient,phone}=req.body;
+  let address;
+  req.session.checkoutDraft={recipient:String(recipient||'').slice(0,80),phone:String(phone||'').slice(0,20),address:String(req.body.address||'').slice(0,300),...addressDraft(req.body)};
+  try {address=resolveAddress(req.body);} catch(error) {return flash(req,res,error.message,'/checkout');}
   if (!textField(recipient,2,80) || !/^0\d{9}$/.test(phone || '') || !textField(address,10,300)) return flash(req,res,'Kiểm tra tên, số điện thoại 10 số và địa chỉ nhận hàng.','/checkout');
   try {
     if(req.body.method==='ONLINE'&&!paymentConfig) return res.status(503).send('Thanh toán trực tuyến tạm thời chưa khả dụng.');

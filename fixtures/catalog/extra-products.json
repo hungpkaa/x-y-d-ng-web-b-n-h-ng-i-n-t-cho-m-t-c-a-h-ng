@@ -1,0 +1,227 @@
+[
+  {
+    "id": 121,
+    "title": "iPhone 5s",
+    "brand": "Apple",
+    "category": "smartphones",
+    "description": "The iPhone 5s is a classic smartphone known for its compact design and advanced features during its release. While it's an older model, it still provides a reliable user experience.",
+    "price": 199.99,
+    "images": [
+      "https://cdn.dummyjson.com/product-images/smartphones/iphone-5s/1.webp",
+      "https://cdn.dummyjson.com/product-images/smartphones/iphone-5s/2.webp"
+    ]
+  },
+  {
+    "id": 122,
+    "title": "iPhone 6",
+    "brand": "Apple",
+    "category": "smartphones",
+    "description": "The iPhone 6 is a stylish and capable smartphone with a larger display and improved performance. It introduced new features and design elements, making it a popular choice in its time.",
+    "price": 299.99,
+    "images": [
+      "https://cdn.dummyjson.com/product-images/smartphones/iphone-6/1.webp",
+      "https://cdn.dummyjson.com/product-images/smartphones/iphone-6/2.webp"
+    ]
+  },
+  {
+    "id": 124,
+    "title": "iPhone X",
+    "brand": "Apple",
+    "category": "smartphones",
+    "description": "The iPhone X is a flagship smartphone featuring a bezel-less OLED display, facial recognition technology (Face ID), and impressive performance. It represents a milestone in iPhone design and innovation.",
+    "price": 899.99,
+    "images": [
+      "https://cdn.dummyjson.com/product-images/smartphones/iphone-x/1.webp",
+      "https://cdn.dummyjson.com/product-images/smartphones/iphone-x/2.webp"
+    ]
+  },
+  {
+    "id": 131,
+    "title": "Samsung Galaxy S7",
+    "brand": "Samsung",
+    "category": "smartphones",
+    "description": "The Samsung Galaxy S7 is a flagship smartphone known for its sleek design and advanced features. It features a high-resolution display, powerful camera, and robust performance.",
+    "price": 299.99,
+    "images": [
+      "https://cdn.dummyjson.com/product-images/smartphones/samsung-galaxy-s7/1.webp",
+      "https://cdn.dummyjson.com/product-images/smartphones/samsung-galaxy-s7/2.webp"
+    ]
+  },
+  {
+    "id": 132,
+    "title": "Samsung Galaxy S8",
+    "brand": "Samsung",
+    "category": "smartphones",
+    "description": "The Samsung Galaxy S8 is a premium smartphone with an Infinity Display, offering a stunning visual experience. It boasts advanced camera capabilities and cutting-edge technology.",
+    "price": 499.99,
+    "images": [
+      "https://cdn.dummyjson.com/product-images/smartphones/samsung-galaxy-s8/1.webp",
+      "https://cdn.dummyjson.com/product-images/smartphones/samsung-galaxy-s8/2.webp"
+    ]
+  },
+  {
+    "id": 161,
+    "title": "Samsung Galaxy Tab White",
+    "brand": "Samsung",
+    "category": "tablets",
+    "description": "The Samsung Galaxy Tab in White is a sleek and versatile Android tablet. With a vibrant display, long-lasting battery, and a range of features, it offers a great user experience for various tasks.",
+    "price": 349.99,
+    "images": [
+      "https://cdn.dummyjson.com/product-images/tablets/samsung-galaxy-tab-white/1.webp",
+      "https://cdn.dummyjson.com/product-images/tablets/samsung-galaxy-tab-white/2.webp"
+    ]
+  },
+  {
+    "id": 109,
+    "title": "Monopod",
+    "brand": "TechGear",
+    "category": "mobile-accessories",
+    "description": "The Monopod is a versatile camera accessory for stable and adjustable shooting. Perfect for capturing selfies, group photos, and videos with ease.",
+    "price": 19.99,
+    "images": [
+      "https://cdn.dummyjson.com/product-images/mobile-accessories/monopod/1.webp",
+      "https://cdn.dummyjson.com/product-images/mobile-accessories/monopod/2.webp"
+    ]
+  },
+  {
+    "id": 110,
+    "title": "Selfie Lamp with iPhone",
+    "brand": "GadgetMaster",
+    "category": "mobile-accessories",
+    "description": "The Selfie Lamp with iPhone is a portable and adjustable LED light designed to enhance your selfies and video calls. Attach it to your iPhone for well-lit photos.",
+    "price": 14.99,
+    "images": [
+      "https://cdn.dummyjson.com/product-images/mobile-accessories/selfie-lamp-with-iphone/1.webp"
+    ]
+  },
+  {
+    "id": 111,
+    "title": "Selfie Stick Monopod",
+    "brand": "SnapTech",
+    "category": "mobile-accessories",
+    "description": "The Selfie Stick Monopod is a extendable and foldable device for capturing the perfect selfie or group photo. Compatible with smartphones and cameras.",
+    "price": 12.99,
+    "images": [
+      "https://cdn.dummyjson.com/product-images/mobile-accessories/selfie-stick-monopod/1.webp"
+    ]
+  },
+  {
+    "id": 51,
+    "title": "Boxed Blender",
+    "brand": "Demo",
+    "category": "kitchen-appliances",
+    "description": "The Boxed Blender is a powerful and compact blender perfect for smoothies, shakes, and more. Its convenient design and multiple functions make it a versatile kitchen appliance.",
+    "price": 39.99,
+    "images": [
+      "https://cdn.dummyjson.com/product-images/kitchen-accessories/boxed-blender/1.webp",
+      "https://cdn.dummyjson.com/product-images/kitchen-accessories/boxed-blender/2.webp"
+    ]
+  },
+  {
+    "id": 56,
+    "title": "Electric Stove",
+    "brand": "Demo",
+    "category": "kitchen-appliances",
+    "description": "The Electric Stove provides a portable and efficient cooking solution. Ideal for small kitchens or as an additional cooking surface for various culinary needs.",
+    "price": 49.99,
+    "images": [
+      "https://cdn.dummyjson.com/product-images/kitchen-accessories/electric-stove/1.webp",
+      "https://cdn.dummyjson.com/product-images/kitchen-accessories/electric-stove/2.webp"
+    ]
+  },
+  {
+    "id": 61,
+    "title": "Hand Blender",
+    "brand": "Demo",
+    "category": "kitchen-appliances",
+    "description": "The Hand Blender is a versatile kitchen appliance for blending, pureeing, and mixing. Its compact design and powerful motor make it a convenient tool for various recipes.",
+    "price": 34.99,
+    "images": [
+      "https://cdn.dummyjson.com/product-images/kitchen-accessories/hand-blender/1.webp"
+    ]
+  },
+  {
+    "id": 66,
+    "title": "Microwave Oven",
+    "brand": "Demo",
+    "category": "kitchen-appliances",
+    "description": "The Microwave Oven is a versatile kitchen appliance for quick and efficient cooking, reheating, and defrosting. Its compact size makes it suitable for various kitchen setups.",
+    "price": 89.99,
+    "images": [
+      "https://cdn.dummyjson.com/product-images/kitchen-accessories/microwave-oven/1.webp",
+      "https://cdn.dummyjson.com/product-images/kitchen-accessories/microwave-oven/2.webp"
+    ]
+  },
+  {
+    "id": 10009,
+    "source": "fakestore",
+    "title": "WD 2TB Elements Portable External Hard Drive - USB 3.0",
+    "brand": "Western Digital",
+    "category": "storage",
+    "description": "USB 3.0 and USB 2.0 Compatibility Fast data transfers Improve PC Performance High Capacity; Compatibility Formatted NTFS for Windows 10, Windows 8.1, Windows 7; Reformatting may be required for other operating systems; Compatibility may vary depending on user’s hardware configuration and operating system",
+    "price": 64,
+    "images": [
+      "https://fakestoreapi.com/img/61IBBVJvSDL._AC_SY879_t.png"
+    ]
+  },
+  {
+    "id": 10010,
+    "source": "fakestore",
+    "title": "SanDisk SSD PLUS 1TB Internal SSD - SATA III 6 Gb/s",
+    "brand": "SanDisk",
+    "category": "storage",
+    "description": "Easy upgrade for faster boot up, shutdown, application load and response (As compared to 5400 RPM SATA 2.5” hard drive; Based on published specifications and internal benchmarking tests using PCMark vantage scores) Boosts burst write performance, making it ideal for typical PC workloads The perfect balance of performance and reliability Read/write speeds of up to 535MB/s/450MB/s (Based on internal testing; Performance may vary depending upon drive capacity, host device, OS and application.)",
+    "price": 109,
+    "images": [
+      "https://fakestoreapi.com/img/61U7T1koQqL._AC_SX679_t.png"
+    ]
+  },
+  {
+    "id": 10011,
+    "source": "fakestore",
+    "title": "Silicon Power 256GB SSD 3D NAND A55 SLC Cache Performance Boost SATA III 2.5",
+    "brand": "Silicon Power",
+    "category": "storage",
+    "description": "3D NAND flash are applied to deliver high transfer speeds Remarkable transfer speeds that enable faster bootup and improved overall system performance. The advanced SLC Cache Technology allows performance boost and longer lifespan 7mm slim design suitable for Ultrabooks and Ultra-slim notebooks. Supports TRIM command, Garbage Collection technology, RAID, and ECC (Error Checking & Correction) to provide the optimized performance and enhanced reliability.",
+    "price": 109,
+    "images": [
+      "https://fakestoreapi.com/img/71kWymZ+c+L._AC_SX679_t.png"
+    ]
+  },
+  {
+    "id": 10012,
+    "source": "fakestore",
+    "title": "WD 4TB Gaming Drive Works with Playstation 4 Portable External Hard Drive",
+    "brand": "Western Digital",
+    "category": "storage",
+    "description": "Expand your PS4 gaming experience, Play anywhere Fast and easy, setup Sleek design with high capacity, 3-year manufacturer's limited warranty",
+    "price": 114,
+    "images": [
+      "https://fakestoreapi.com/img/61mtL65D4cL._AC_SX679_t.png"
+    ]
+  },
+  {
+    "id": 10013,
+    "source": "fakestore",
+    "title": "Acer SB220Q bi 21.5 inches Full HD (1920 x 1080) IPS Ultra-Thin",
+    "brand": "Acer",
+    "category": "monitors",
+    "description": "21. 5 inches Full HD (1920 x 1080) widescreen IPS display And Radeon free Sync technology. No compatibility for VESA Mount Refresh Rate: 75Hz - Using HDMI port Zero-frame design | ultra-thin | 4ms response time | IPS panel Aspect ratio - 16: 9. Color Supported - 16. 7 million colors. Brightness - 250 nit Tilt angle -5 degree to 15 degree. Horizontal viewing angle-178 degree. Vertical viewing angle-178 degree 75 hertz",
+    "price": 599,
+    "images": [
+      "https://fakestoreapi.com/img/81QpkIctqPL._AC_SX679_t.png"
+    ]
+  },
+  {
+    "id": 10014,
+    "source": "fakestore",
+    "title": "Samsung 49-Inch CHG90 144Hz Curved Gaming Monitor (LC49HG90DMNXZA) – Super Ultrawide Screen QLED",
+    "brand": "Samsung",
+    "category": "monitors",
+    "description": "49 INCH SUPER ULTRAWIDE 32:9 CURVED GAMING MONITOR with dual 27 inch screen side by side QUANTUM DOT (QLED) TECHNOLOGY, HDR support and factory calibration provides stunningly realistic and accurate color and contrast 144HZ HIGH REFRESH RATE and 1ms ultra fast response time work to eliminate motion blur, ghosting, and reduce input lag",
+    "price": 999.99,
+    "images": [
+      "https://fakestoreapi.com/img/81Zt42ioCgL._AC_SX679_t.png"
+    ]
+  }
+]

@@ -4,6 +4,12 @@
 
 ## Nguồn và giới hạn
 
+### Đợt bổ sung danh mục
+
+Thêm 19 sản phẩm và 29 ảnh WebP từ DummyJSON và Fake Store API, nâng tổng lên 52 sản phẩm ở 8 danh mục. Snapshot bổ sung nằm tại `fixtures/catalog/extra-products.json`: 5 điện thoại, 1 tablet, 3 phụ kiện chụp ảnh, 4 thiết bị điện gia dụng, 2 màn hình và 4 thiết bị lưu trữ. Giá và tồn kho vẫn là dữ liệu mẫu; thông số cần được xác minh trước khi bán thật.
+
+`npm.cmd run catalog:expand` tải lại snapshot bổ sung và chuẩn bị ảnh. `catalog:images` chuẩn bị ảnh của cả hai snapshot; `catalog:import` nhập cả hai snapshot vào cơ sở dữ liệu đang cấu hình. Mục Fake Store API dùng SKU `SAMPLE-FS-`, các mục DummyJSON giữ `SAMPLE-DJ-`; audit log lưu URL nguồn tương ứng. Nhập lại không ghi đè sản phẩm cũ.
+
 - Dữ liệu và các góc ảnh: [DummyJSON Products](https://dummyjson.com/docs/products), bộ dữ liệu phục vụ thử nghiệm và phát triển giao diện. Không phải danh mục hàng mới nhất hoặc bảng giá Việt Nam.
 - Snapshot nguồn tại `fixtures/catalog/products.json`; URL nguồn từng sản phẩm và ảnh được lưu trong audit log khi nhập.
 - Giá quy đổi mẫu theo hệ số cố định 25.000, làm tròn 10.000 đồng; đây không phải tỷ giá hiện hành. Mỗi SKU mới có 12 đơn vị tồn mẫu cùng lịch sử nhập kho. Mô tả công khai ghi rõ dữ liệu mẫu.

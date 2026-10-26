@@ -1,7 +1,7 @@
 const {mkdirSync,existsSync,writeFileSync}=require('node:fs');
 const {join}=require('node:path');
 const sharp=require('sharp');
-const products=require('../fixtures/catalog/products.json');
+const products=[...require('../fixtures/catalog/products.json'),...require('../fixtures/catalog/extra-products.json')];
 const directory=join(__dirname,'../data/catalog-import/images');
 async function main() {
   mkdirSync(directory,{recursive:true});
@@ -11,7 +11,7 @@ async function main() {
     while(queue.length) {
       const {url,file}=queue.shift();
       if(!existsSync(file)) {
-        if(new URL(url).hostname!=='cdn.dummyjson.com') throw new Error('Unexpected image host');
+        if(!['cdn.dummyjson.com','fakestoreapi.com'].includes(new URL(url).hostname)) throw new Error('Unexpected image host');
         const response=await fetch(url,{signal:AbortSignal.timeout(30000)});
         if(!response.ok) throw new Error(`Image returned ${response.status}`);
         const input=Buffer.from(await response.arrayBuffer());

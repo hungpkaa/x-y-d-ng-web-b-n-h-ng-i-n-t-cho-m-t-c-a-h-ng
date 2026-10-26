@@ -97,3 +97,29 @@ test('Migration v3 không thay SKU, kho hoặc đơn và chạy lại không tr�
     assert.equal(db.prepare('PRAGMA foreign_key_check').all().length,0);
   } finally {db.close();}
 });
+
+test('catalog groups keep every category visible and retain category-specific filters and paging',()=>{
+  const {catalogGroups}=require('../src/product-list');
+  const db=openDatabase(':memory:');
+  try {
+    for(let i=1;i<=34;i++) {
+      const category=i<=33?'Phone':'Laptop';
+      db.prepare('INSERT INTO products(id,name,category,brand,description,price,stock,status,active) VALUES(?,?,?,?,?,?,?,?,?)').run(i,`Device ${i}`,category,'Demo','Description',1,0,'ACTIVE',1);
+      db.prepare('INSERT INTO product_variants(product_id,sku,price,on_hand,active) VALUES(?,?,?,?,1)').run(i,`GROUP-${i}`,i*100,1);
+    }
+    const categories=[{category:'Phone'},{category:'Laptop'},{category:'Empty'}];
+    const query={q:'Device',brand:'Demo',sort:'price_asc'};
+    const listing=listProducts(db,query);
+    const groups=catalogGroups(db,query,listing,categories);
+    assert.deepEqual(groups.map(g=>g.category),['Phone','Laptop']);
+    assert.equal(groups[0].products.length,20);assert.equal(groups[0].paging.total,33);
+    assert.equal(groups[1].products.length,1);
+    assert.ok(groups.every(g=>g.products.every(p=>p.category===g.category)));
+    const nextQuery=Object.fromEntries(new URL(groups[0].paging.next,'http://store.test').searchParams);
+    assert.equal(nextQuery.brand,'Demo');assert.equal(nextQuery.sort,'price_asc');assert.equal(nextQuery.category,'Phone');
+    const next=listProducts(db,nextQuery);
+    assert.equal(catalogGroups(db,nextQuery,next,categories)[0].products.length,13);
+    const filtered={...query,min:'3400'};
+    assert.deepEqual(catalogGroups(db,filtered,listProducts(db,filtered),categories).map(g=>g.category),['Laptop']);
+  } finally {db.close();}
+});

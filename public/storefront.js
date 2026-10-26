@@ -14,7 +14,8 @@ if(checkoutOptions) {
   }
   checkoutOptions.addEventListener('submit',()=>{
     const delivery=document.getElementById('place-order-form');
-    for(const [source,target] of [['recipient','recipient'],['phone','phone'],['address','delivery_address']]) {
+    for(const [source,target] of [['recipient','recipient'],['phone','phone'],['address','delivery_address'],['province_code','province_code'],['ward_code','ward_code'],['address_line','address_line'],['delivery_source_address','delivery_source_address']]) {
+      if(!delivery?.elements[source]||delivery.elements[source].matches(':disabled')) continue;
       let input=checkoutOptions.querySelector('input[name="'+target+'"]');
       if(!input){input=document.createElement('input');input.type='hidden';input.name=target;checkoutOptions.append(input);}
       input.value=delivery?.elements[source]?.value||'';

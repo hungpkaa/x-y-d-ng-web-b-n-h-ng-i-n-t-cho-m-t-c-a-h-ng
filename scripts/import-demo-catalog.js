@@ -2,7 +2,7 @@ const {readFileSync}=require('node:fs');
 const {join}=require('node:path');
 const {defaultDatabase}=require('../src/db');
 const {importDemoCatalog}=require('../src/demo-catalog');
-const products=require('../fixtures/catalog/products.json');
+const products=[...require('../fixtures/catalog/products.json'),...require('../fixtures/catalog/extra-products.json')];
 const db=defaultDatabase();
 try {
   console.log(JSON.stringify(importDemoCatalog(db,products,(id,index)=>{

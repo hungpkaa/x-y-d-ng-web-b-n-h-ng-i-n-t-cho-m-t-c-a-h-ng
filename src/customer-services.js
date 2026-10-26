@@ -49,6 +49,7 @@ function addresses(db,actor) {
 }
 function saveAddress(db,actor,id,input) {
   return transaction(db,()=>{
+    input={...input,address:require('./address-regions').resolveAddress(input)};
     const user=actorUser(db,actor,['CUSTOMER']);
     if(['user_id','is_default'].some(key=>input[key]!==undefined)) reject(403,'Không được thay chủ sở hữu hoặc mặc định qua thao tác này.');
     const existing=id===null?null:db.prepare('SELECT * FROM addresses WHERE id=? AND user_id=?').get(id,user.id);

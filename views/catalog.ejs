@@ -1,18 +1,36 @@
+<link rel="stylesheet" href="/retail-shopping.css">
 <% const hasFilters=Boolean(q||category||brand||min||max); %>
+<% const currentSort=typeof sort==='string'?sort:'newest'; const browseUrl=(changes={})=>'/?'+new URLSearchParams({q,category,brand,min,max,sort:currentSort,...changes}).toString()+'#catalog-products'; %>
 <% if(!hasFilters&&paging.page===1) { %>
 <%- include('retail-home') %>
 <% } %>
 <% if(category) { %><%- include('category-landing') %><% } %>
 <section id="catalog-products" aria-labelledby="catalog-heading">
   <div class="section-heading"><div><small>THIẾT BỊ DÀNH CHO BẠN</small><h1 id="catalog-heading"><%= category?category+' phù hợp với bạn':hasFilters?'Kết quả tìm sản phẩm':'Khám phá sản phẩm' %></h1></div><span><%= paging.total %> sản phẩm</span></div>
-  <details class="catalog-filter-panel" open><summary>Tìm kiếm và bộ lọc</summary><%- include('product-filters',{management:false}) %></details>
+  <% if(catalogGroups.length>1) { %><nav class="catalog-jump-nav" aria-label="Đến danh mục sản phẩm"><span>Khám phá nhanh</span><% catalogGroups.filter(group=>group.products.length).forEach((group,index)=>{ %><a href="#catalog-category-<%= index %>"><%= group.category %><small><%= group.paging.total %></small></a><% }); %></nav><% } %>
+  <div class="catalog-shopping-tools">
+    <% if(typeof brands!=='undefined'&&brands.length) { %><nav class="catalog-brand-shortcuts" aria-label="Lọc nhanh thương hiệu"><strong>Thương hiệu</strong><a href="<%= browseUrl({brand:''}) %>" <%- !brand?'aria-current="true"':'' %>>Tất cả</a><% brands.forEach(item=>{ %><a href="<%= browseUrl({brand:item.brand}) %>" <%- brand===item.brand?'aria-current="true"':'' %>><%= item.brand %></a><% }); %></nav><% } %>
+    <nav class="catalog-sort-shortcuts" aria-label="Sắp xếp sản phẩm"><strong>Sắp xếp theo</strong><% [['newest','Mới nhất'],['price_asc','Giá thấp → cao'],['price_desc','Giá cao → thấp']].forEach(([value,label])=>{ %><a href="<%= browseUrl({sort:value}) %>" <%- currentSort===value?'aria-current="true"':'' %>><%= label %></a><% }); %></nav>
+  </div>
+  <details class="catalog-filter-panel"><summary><span>Tìm kiếm và bộ lọc</span><small>Danh mục · Thương hiệu · Khoảng giá</small></summary><%- include('product-filters',{management:false}) %></details>
   <% if(hasFilters) { %><div class="active-filters" aria-label="Bộ lọc đang áp dụng"><% [q?'Từ khóa: '+q:'',category?'Danh mục: '+category:'',brand?'Thương hiệu: '+brand:'',min?'Từ '+money(Number(min)):'',max?'Đến '+money(Number(max)):''].filter(Boolean).forEach(f=>{ %><span><%= f %></span><% }) %><a href="<%= category?'/?'+new URLSearchParams({category}).toString()+'#catalog-products':'/#catalog-products' %>">Xóa bộ lọc</a></div><% } %>
-  <% if(products.length) { %>
-  <p class="catalog-result-summary">Hiển thị <%= paging.offset+1 %>–<%= paging.offset+products.length %> trên <%= paging.total %> sản phẩm · Trang <%= paging.page %>/<%= paging.pages %></p>
-  <div class="grid catalog-grid <%= category?'category-product-grid':'' %>"><% products.forEach(p=>{ %><%- include('product-card',{p}) %><% }) %></div>
+  <% if(catalogGroups.some(group=>group.products.length)) { %>
+  <% catalogGroups.filter(group=>group.products.length).forEach((group,index)=>{ %>
+  <section class="catalog-category catalog-tone-<%= index%3 %>" data-catalog-group aria-labelledby="catalog-category-<%= index %>">
+  <div class="catalog-category-heading"><div><span class="catalog-category-index">BỘ SƯU TẬP <%= String(index+1).padStart(2,'0') %></span><h2 id="catalog-category-<%= index %>"><%= group.category %></h2><span><%= group.paging.total %> sản phẩm để bạn lựa chọn</span></div><a class="catalog-view-all" href="/?<%= new URLSearchParams({q,category:group.category,brand,min,max,sort:typeof sort==='string'?sort:'newest'}).toString() %>#catalog-products">Xem tất cả <span>→</span></a></div>
+  <div class="catalog-carousel">
+  <div id="catalog-rail-<%= index %>" class="grid catalog-grid catalog-rail category-product-grid" data-catalog-rail data-category="<%= group.category %>" data-next="<%= group.paging.next||'' %>" tabindex="0" role="region" aria-labelledby="catalog-category-<%= index %>"><% group.products.forEach(p=>{ %><%- include('product-card',{p}) %><% }) %></div>
+  <div class="catalog-arrow-controls" data-catalog-controls hidden><button type="button" class="secondary" data-catalog-prev aria-label="Sản phẩm trước — <%= group.category %>" aria-controls="catalog-rail-<%= index %>"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button><button type="button" class="secondary" data-catalog-next aria-label="Sản phẩm tiếp theo — <%= group.category %>" aria-controls="catalog-rail-<%= index %>"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button></div>
+  </div>
+  <div class="catalog-load-feedback"><span data-catalog-status role="status" aria-live="polite"></span> <button type="button" class="secondary" data-catalog-retry hidden>Thử lại</button></div>
+  <noscript><%- include('pagination',{paging:group.paging}) %></noscript>
+  </section>
+  <% }); %>
   <% } else { %>
   <div class="empty-state"><h2>Chưa tìm thấy sản phẩm phù hợp</h2><p>Thử từ khóa khác hoặc mở rộng khoảng giá để xem thêm sản phẩm.</p><a class="button secondary" href="/#catalog-products">Xem tất cả sản phẩm</a></div>
   <% } %>
 </section>
-<%- include('pagination') %>
+<script src="/catalog-rail.js" defer></script>
 <%- include('recommendation-cards') %>
+<section class="shopping-assistance" aria-labelledby="shopping-assistance-title"><div class="shopping-assistance-copy"><span class="retail-eyebrow">CHỌN THIẾT BỊ DỄ HƠN</span><h2 id="shopping-assistance-title">Còn phân vân?<br>Bắt đầu từ nhu cầu của bạn.</h2><p>Thu hẹp lựa chọn bằng ngân sách, so sánh thông số rồi chọn cấu hình phù hợp.</p></div><div class="shopping-assistance-options"><a href="/recommendations"><span class="assistance-icon"><%- include('ui-icon',{name:'search'}) %></span><div><strong>Tìm theo ngân sách</strong><small>Khám phá thiết bị trong tầm giá</small></div><span aria-hidden="true">↗</span></a><a href="/compare"><span class="assistance-icon"><%- include('ui-icon',{name:'compare'}) %></span><div><strong>Đặt lên bàn cân</strong><small>So sánh thông số trước khi mua</small></div><span aria-hidden="true">↗</span></a></div></section>
+<div class="catalog-end-note"><span>electro<strong>store</strong> · Thiết bị cho cuộc sống</span><a href="#main-content">Về đầu trang ↑</a></div>
